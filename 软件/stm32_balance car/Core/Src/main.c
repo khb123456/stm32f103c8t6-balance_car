@@ -1,0 +1,367 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+#include "i2c.h"
+#include "tim.h"
+#include "usart.h"
+#include "gpio.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include "OLED.h"
+#include "MPU6050.h"
+#include "stdio.h"
+#include "sr04.h"
+#include "motor.h"
+#include "encoder.h"
+#include "string.h"
+#include "task.h"
+#include "pid.h"
+#include "stdlib.h"
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+
+/* USER CODE BEGIN PV */
+uint8_t ID;								
+float AX, AY, AZ, GX, GY, GZ,Tem;	
+uint32_t sys_ticks=0;
+int Encoder_Left,Encoder_Right;
+uint8_t display_buf[20];
+extern float distance;
+extern uint8_t rx_buf[2];
+char uart_buf[128];
+uint8_t Rx_Flag;
+char RxPacket[100];
+int Ave_PWM;
+PID_TypeDef angle_pid={
+	.Kp=120.0f,
+	.Ki=0.0f,
+	.Kd=-0.75f,
+	.out_max=5000.0f
+};
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+/* USER CODE BEGIN PFP */
+void Read(void);
+int fputc(int c,FILE *stream);
+static void USART3_Proc(void);
+void Control();
+void Set_params();
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+
+/* USER CODE END 0 */
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+
+  /* USER CODE BEGIN 1 */
+	float pitch;
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
+  SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_I2C1_Init();
+  MX_TIM3_Init();
+  MX_TIM1_Init();
+  MX_TIM2_Init();
+  MX_TIM4_Init();
+  MX_USART3_UART_Init();
+  /* USER CODE BEGIN 2 */
+  IIC_Init();
+  OLED_Init();  
+  MPU6050_Init();
+  OLED_Clear();
+  HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_4);
+  HAL_TIM_Encoder_Start(&htim2,TIM_CHANNEL_ALL);
+  HAL_TIM_Encoder_Start(&htim4,TIM_CHANNEL_ALL);
+  HAL_UART_Receive_IT(&huart3,rx_buf,1);
+  Load(0,0);
+//  HAL_UART_Transmit(&huart3,"hello,world!\r\n",13,1000);
+//  IIC_Start();
+//  IIC_SendByte(0xD0);
+//  uint8_t Ack=IIC_ReceiveAck();
+//  IIC_Stop();
+//  OLED_ShowNum(0,2,Ack,3,16,1);
+//  OLED_ShowString(0,0,"ID:",16,0);
+//  ID=MPU6050_GetID();
+//  OLED_ShowNum(80,0,ID,4,16,0);
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+//	SR04_Trigger();
+//	sprintf((char *)display_buf,"distance:%.1f cm ",distance);
+//	OLED_ShowString(0,0,(char *)display_buf,16,1);
+//	  MPU6050_UpData();
+//	MPU6050_GetData(&AX,&AY,&AZ,&GX,&GY,&GZ,&Tem);
+//	sprintf(uart_buf,"%f %f %f %.2f %f %f %f\r\n",AX,AY,AZ,Tem,GX,GY,GZ);
+//	  HAL_UART_Transmit(&huart3,(uint8_t *)uart_buf,strlen(uart_buf),100);
+//	  HAL_Delay(10);
+//	  printf("%f\r\n",GX);
+//	  OLED_ShowNum(0,2,AX,5,16,0);
+//	  OLED_ShowNum(64,2,AY,5,16,0);
+//	  OLED_ShowNum(0,4,AZ,5,16,0);
+//	  OLED_ShowNum(64,4,GX,5,16,0);
+//	  OLED_ShowNum(0,6,GY,5,16,0);
+//	  OLED_ShowNum(64,6,GZ,5,16,0);
+//	  OLED_ShowNum(0,8,Tem,5,16,0);
+//	  Read();
+//	  printf("Encoder_L: %d \n  Encoder_R:%d \r\n",Encoder_Left,Encoder_Right);
+//	  sprintf((char *)display_buf,"Encoder_L:%d\r\n",Encoder_Left);
+//	  OLED_ShowString(0,0,(char*)display_buf,16,0);
+//	  sprintf((char *)display_buf,"Encoder_R:%d\r\n",Encoder_Right);
+//	  OLED_ShowString(0,2,(char*)display_buf,16,0);
+//	 HAL_UART_Transmit(&huart3,display_buf,sizeof(display_buf),1000);
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+	MPU6050_SetMode(MODE_COMPLEMENTARY);
+	MPU6050_Mode_Update();
+	Set_params();
+	pitch=MPU6050_GetPitch();
+	sprintf((char *)display_buf,"Pitch:%f",pitch);
+	OLED_ShowString(0,0,(char *)display_buf,16,0);
+//	Load(2000,2000);
+	Control();
+//	OLED_ShowNum(0,0,Ave_PWM,4,16,0);
+  }
+  /* USER CODE END 3 */
+}
+
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void SystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/* USER CODE BEGIN 4 */
+void Read(void)
+{
+	if(uwTick-sys_ticks<10)
+		return;
+	sys_ticks=uwTick;
+	Encoder_Left=Read_Speed(&htim2);
+	Encoder_Right=-Read_Speed(&htim4);
+}
+
+int fputc(int c,FILE *stream)
+{
+	uint8_t ch[1]={c};
+	HAL_UART_Transmit(&huart3,ch,1,0xFFFF);
+	return c;
+}
+
+static void USART3_Proc(void)
+{
+	PERIODIC(10);
+	
+	float yaw=MPU6050_GetYaw();
+	float pitch=MPU6050_GetPitch();
+	float roll=MPU6050_GetRoll();
+	printf("%f,%f,%f\r\n",yaw,pitch,roll);
+	
+}
+void Set_params()
+{
+	if(Rx_Flag==1)
+	{
+		char *Tag=strtok(RxPacket,",");
+		if(strcmp(Tag,"slider")==0)
+		{
+			char *Name=strtok(NULL,",");
+			char *Value=strtok(NULL,",");
+			
+			if(strcmp(Name,"angle_kp")==0)
+			{
+				angle_pid.Kp=atof(Value);
+			}
+			else if(strcmp(Name,"angle_kd")==0)
+			{
+				angle_pid.Kd=atof(Value);
+			}
+		}
+		
+			Rx_Flag=0;
+
+	}
+//	printf("[plot,%f,%f]",angle_pid.target,angle_pid.actual);
+	
+}
+void Control()
+{
+	PERIODIC(10);
+	angle_pid.target=0.5f;
+	angle_pid.actual=MPU6050_GetPitch();
+	angle_pid.dif=MPU6050_GetGyroX();
+//	printf("Kp=%f,Ki=%f,Kd=%f,target=%f,actual=%f,dif=%f\r\n",angle_pid.Kp,angle_pid.Ki,angle_pid.Kd,
+//			angle_pid.target,angle_pid.actual,angle_pid.dif);
+	printf("%f\r\n",angle_pid.actual);
+	PID_Calculate(&angle_pid);
+//	Ave_PWM=(int)angle_pid.out;
+//	Load(Ave_PWM,Ave_PWM);
+//	printf("%d",Ave_PWM);
+	 
+	
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	static uint8_t RxState=0;
+	static uint8_t pRxPacket=0;
+
+	if(huart->Instance==USART3)
+	{
+		if(RxState==0)
+		{
+			if(rx_buf[0]=='['&&Rx_Flag==0)
+			{
+				RxState=1;
+				pRxPacket=0;
+			}
+		}
+		
+		else if(RxState==1)
+		{
+			if(rx_buf[0]==']')
+			{
+				RxState=0;
+				RxPacket[pRxPacket]='\0';
+				Rx_Flag=1;
+			}
+			else
+		{
+			RxPacket[pRxPacket]=rx_buf[0];
+			pRxPacket++;
+		}
+		}
+
+		HAL_UART_Receive_IT(&huart3,rx_buf,1);
+	}
+}
+/* USER CODE END 4 */
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+
+#ifdef  USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line)
+{
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
+}
+#endif /* USE_FULL_ASSERT */
