@@ -3,13 +3,13 @@
 void IIC_W_SCL(uint8_t BitValue)
 {
     HAL_GPIO_WritePin(SCL_PORT, SCL_PIN, (GPIO_PinState)BitValue); 
-    HAL_Delay_us(10);                                                    
+//    HAL_Delay_us(10);                                                    
 }
 
 void IIC_W_SDA(uint8_t BitValue)
 {
     HAL_GPIO_WritePin(SDA_PORT, SDA_PIN, (GPIO_PinState)BitValue); 
-    HAL_Delay_us(10);                                                     
+//    HAL_Delay_us(10);                                                     
 }
 
 

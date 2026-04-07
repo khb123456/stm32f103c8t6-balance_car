@@ -56,7 +56,7 @@
 
 /* USER CODE BEGIN PV */
 uint8_t ID;								
-float AX, AY, AZ, GX, GY, GZ,Tem;	
+float AX, AY, AZ, GX, GY, GZ,Tem;
 uint32_t sys_ticks=0;
 int Encoder_Left,Encoder_Right;
 uint8_t display_buf[20];
@@ -82,6 +82,24 @@ int fputc(int c,FILE *stream);
 static void USART3_Proc(void);
 void Control();
 void Set_params();
+void DWT_Init(void)
+{
+    DEM_CR |= DEM_CR_TRCENA;   
+    DWT_CYCCNT = 0;           
+    DWT_CR |= DWT_CR_CYCCNTENA;
+}
+
+// 获取当前CPU周期
+uint32_t DWT_GetCycle(void)
+{
+    return DWT_CYCCNT;
+}
+
+// 转微秒
+uint32_t DWT_Cycle2Us(uint32_t cycle)
+{
+    return cycle / (SystemCoreClock / 1000000);
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -97,7 +115,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	float pitch;
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -135,6 +153,7 @@ int main(void)
   HAL_TIM_Encoder_Start(&htim4,TIM_CHANNEL_ALL);
   HAL_UART_Receive_IT(&huart3,rx_buf,1);
   Load(0,0);
+  DWT_Init();
 //  HAL_UART_Transmit(&huart3,"hello,world!\r\n",13,1000);
 //  IIC_Start();
 //  IIC_SendByte(0xD0);
@@ -176,15 +195,23 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	MPU6050_SetMode(MODE_COMPLEMENTARY);
-	MPU6050_Mode_Update();
-	Set_params();
-	pitch=MPU6050_GetPitch();
-	sprintf((char *)display_buf,"Pitch:%f",pitch);
-	OLED_ShowString(0,0,(char *)display_buf,16,0);
+//	MPU6050_SetMode(MODE_DMP);
+//	uint32_t star_time,end_time,time;
+//	star_time=DWT_GetCycle();
+//	MPU6050_Mode_Update();
+////	Set_params();
+//	pitch=MPU6050_GetPitch();
+//	end_time=DWT_GetCycle();
+//	time=DWT_Cycle2Us(end_time-star_time);
+//	sprintf((char *)display_buf,"Pitch:%f\r\n",pitch);
+//	OLED_ShowString(0,0,(char *)display_buf,16,0);
+//	sprintf((char *)display_buf,"time:%d\r\n",time);
+//	OLED_ShowString(0,2,(char *)display_buf,16,0);
+//	printf("Pitch:%f\r\n time:%d\r\n",pitch,time);
 //	Load(2000,2000);
-	Control();
+//	Control();
 //	OLED_ShowNum(0,0,Ave_PWM,4,16,0);
+	USART3_Proc();
   }
   /* USER CODE END 3 */
 }
@@ -247,12 +274,17 @@ int fputc(int c,FILE *stream)
 
 static void USART3_Proc(void)
 {
-	PERIODIC(10);
-	
-	float yaw=MPU6050_GetYaw();
-	float pitch=MPU6050_GetPitch();
-	float roll=MPU6050_GetRoll();
-	printf("%f,%f,%f\r\n",yaw,pitch,roll);
+	PERIODIC(1);
+	MPU6050_SetMode(MODE_DMP);
+	uint32_t star_time,end_time,time;
+	star_time=HAL_GetTick();
+	MPU6050_Mode_Update();
+	yaw=MPU6050_GetYaw();
+	pitch=MPU6050_GetPitch();
+	roll=MPU6050_GetRoll();
+	end_time=HAL_GetTick();
+	time=end_time-star_time;
+	printf("%f,%f,%f\r\ntime:%d\n",yaw,pitch,roll,time);
 	
 }
 void Set_params()
@@ -285,8 +317,8 @@ void Control()
 {
 	PERIODIC(10);
 	angle_pid.target=0.5f;
-	angle_pid.actual=MPU6050_GetPitch();
-	angle_pid.dif=MPU6050_GetGyroX();
+//	angle_pid.actual=MPU6050_GetPitch();
+//	angle_pid.dif=MPU6050_GetGyroX();
 //	printf("Kp=%f,Ki=%f,Kd=%f,target=%f,actual=%f,dif=%f\r\n",angle_pid.Kp,angle_pid.Ki,angle_pid.Kd,
 //			angle_pid.target,angle_pid.actual,angle_pid.dif);
 	printf("%f\r\n",angle_pid.actual);

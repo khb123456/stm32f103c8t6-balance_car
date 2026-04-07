@@ -89,6 +89,7 @@ typedef enum{
 
 void MPU6050_WriteReg(uint8_t RegAddress,uint8_t Data);
 uint8_t MPU6050_ReadReg(uint8_t RegAddress);
+uint8_t MPU6050_ReadRegs(uint8_t RegAddress,uint8_t *DataArray,uint8_t Count);
 void MPU6050_Init(void);
 
 void MPU6050_Proc(void);

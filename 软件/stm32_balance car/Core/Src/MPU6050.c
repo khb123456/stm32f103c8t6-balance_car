@@ -38,15 +38,41 @@ uint8_t MPU6050_ReadReg(uint8_t RegAddress)
 	return Data;
 	
 }
-
+uint8_t MPU6050_ReadRegs(uint8_t RegAddress,uint8_t *DataArray,uint8_t Count)
+{
+	uint8_t i;
+	IIC_Start();
+	IIC_SendByte(MPU6050_ADDRESS);
+	IIC_ReceiveAck();
+	IIC_SendByte(RegAddress);
+	IIC_ReceiveAck();
+	
+	IIC_Start();
+	IIC_SendByte(MPU6050_ADDRESS|0x01);
+	IIC_ReceiveAck();
+	
+	for(i=0;i<Count;i++)
+	{
+		DataArray[i]=IIC_ReceiveByte();
+		if(i<Count-1)
+		{
+			IIC_SendAck(0);
+		}
+		else
+		{
+			IIC_SendAck(1);
+		}
+	}
+	IIC_Stop();
+}
 void MPU6050_Init(void)
 {
 	IIC_Init();
 	MPU6050_WriteReg(MPU6050_PWR_MGMT_1, 0x80);		
 	HAL_Delay(100);
 	MPU6050_WriteReg(MPU6050_PWR_MGMT_1, 0x00);		
-//	MPU6050_WriteReg(MPU6050_SMPLRT_DIV, 0x09);		
-//	MPU6050_WriteReg(MPU6050_CONFIG, 0x06);			
+	MPU6050_WriteReg(MPU6050_SMPLRT_DIV, 0x07);		
+	MPU6050_WriteReg(MPU6050_CONFIG, 0x00);			
 	MPU6050_WriteReg(MPU6050_GYRO_CONFIG, 0x18);	//将陀螺仪的量程设置为+-2000°/s
 	MPU6050_WriteReg(MPU6050_ACCEL_CONFIG, 0x00);	//将加速度计的量程设置为+-2g
 }
@@ -177,7 +203,7 @@ int MPU6050_DMP_Init(void)
 	int_param.cb=NULL;   //如果不使用中断，可以设为NULL
 	if(mpu_init(&int_param)) return -1;    //初始化MPU（复位、配置时钟等）
 	if(dmp_load_motion_driver_firmware()) return -1; //加载DMP固件
-	if(dmp_set_fifo_rate(50)) return -1;   //设置DMP输出速率（例如50Hz）
+	if(dmp_set_fifo_rate(5)) return -1;   //设置DMP输出速率（例如50Hz）
 	//设置DMP功能：六轴低功耗四元数、发送原始加速度、发送校准陀螺仪
 	unsigned short dmp_features=DMP_FEATURE_6X_LP_QUAT|		
 					DMP_FEATURE_SEND_RAW_ACCEL|
@@ -259,9 +285,19 @@ uint8_t MPU6050_GetID(void)
 
 void MPU6050_UpDate(void)
 {
-	int16_t ax_raw=(int16_t)((MPU6050_ReadReg(MPU6050_ACCEL_XOUT_H)<<8)|MPU6050_ReadReg(MPU6050_ACCEL_XOUT_L));
-	int16_t ay_raw=(int16_t)((MPU6050_ReadReg(MPU6050_ACCEL_YOUT_H)<<8)|MPU6050_ReadReg(MPU6050_ACCEL_YOUT_L));
-	int16_t az_raw=(int16_t)((MPU6050_ReadReg(MPU6050_ACCEL_ZOUT_H)<<8)|MPU6050_ReadReg(MPU6050_ACCEL_ZOUT_L));
+	uint8_t Data[14];
+	MPU6050_ReadRegs(MPU6050_ACCEL_XOUT_H,Data,14);
+	int16_t ax_raw=(Data[0]<<8)|Data[1];
+	int16_t ay_raw=(Data[2]<<8)|Data[3];
+	int16_t az_raw=(Data[4]<<8)|Data[5];
+	
+	int16_t gx_raw=(Data[8]<<8)|Data[9];
+	int16_t gy_raw=(Data[10]<<8)|Data[11];
+	int16_t gz_raw=(Data[12]<<8)|Data[13];
+//	//单次读取寄存器，然后进行数据拼接
+//	int16_t ax_raw=(int16_t)((MPU6050_ReadReg(MPU6050_ACCEL_XOUT_H)<<8)|MPU6050_ReadReg(MPU6050_ACCEL_XOUT_L));
+//	int16_t ay_raw=(int16_t)((MPU6050_ReadReg(MPU6050_ACCEL_YOUT_H)<<8)|MPU6050_ReadReg(MPU6050_ACCEL_YOUT_L));
+//	int16_t az_raw=(int16_t)((MPU6050_ReadReg(MPU6050_ACCEL_ZOUT_H)<<8)|MPU6050_ReadReg(MPU6050_ACCEL_ZOUT_L));
 	
 	ax=ax_raw*6.1035e-5f;
 	ay=ay_raw*6.1035e-5f;
@@ -269,13 +305,13 @@ void MPU6050_UpDate(void)
 	
 
 	
-	int16_t temperatue_raw=(int16_t)((MPU6050_ReadReg(MPU6050_TEMP_OUT_H)<<8)|MPU6050_ReadReg(MPU6050_TEMP_OUT_L));
-//	temperature=temperatue_raw/340+36.53;		//MPU6050
-	temperature=temperatue_raw/333.87f+21.0f;  //MPU6500
-	
-	int16_t gx_raw=(int16_t)((MPU6050_ReadReg(MPU6050_GYRO_XOUT_H)<<8)|MPU6050_ReadReg(MPU6050_GYRO_XOUT_L));
-	int16_t gy_raw=(int16_t)((MPU6050_ReadReg(MPU6050_GYRO_YOUT_H)<<8)|MPU6050_ReadReg(MPU6050_GYRO_YOUT_L));
-	int16_t gz_raw=(int16_t)((MPU6050_ReadReg(MPU6050_GYRO_ZOUT_H)<<8)|MPU6050_ReadReg(MPU6050_GYRO_ZOUT_L));
+//	int16_t temperatue_raw=(int16_t)((MPU6050_ReadReg(MPU6050_TEMP_OUT_H)<<8)|MPU6050_ReadReg(MPU6050_TEMP_OUT_L));
+////	temperature=temperatue_raw/340+36.53;		//MPU6050
+//	temperature=temperatue_raw/333.87f+21.0f;  //MPU6500
+//	
+//	int16_t gx_raw=(int16_t)((MPU6050_ReadReg(MPU6050_GYRO_XOUT_H)<<8)|MPU6050_ReadReg(MPU6050_GYRO_XOUT_L));
+//	int16_t gy_raw=(int16_t)((MPU6050_ReadReg(MPU6050_GYRO_YOUT_H)<<8)|MPU6050_ReadReg(MPU6050_GYRO_YOUT_L));
+//	int16_t gz_raw=(int16_t)((MPU6050_ReadReg(MPU6050_GYRO_ZOUT_H)<<8)|MPU6050_ReadReg(MPU6050_GYRO_ZOUT_L));
 	
 	gx=gx_raw*6.1035e-2f;
 	gy=gy_raw*6.1035e-2f;
