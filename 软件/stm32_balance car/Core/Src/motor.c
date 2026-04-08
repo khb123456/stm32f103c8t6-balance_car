@@ -1,8 +1,8 @@
 #include "motor.h"
 #include "tim.h"
 
-#define PWM_MAX 7200
-#define PWM_MIN -7200
+#define PWM_MAX 100
+#define PWM_MIN -100
 
 int abs(int p)
 {

@@ -32,15 +32,17 @@ compiling main.c...
   int GetCurrentSpeed();
 ../Core/Inc/pid.h(23): warning:  #1295-D: Deprecated declaration GetDifSpeed - give arg types
   int GetDifSpeed();
-../Core/Src/main.c(83): warning:  #1295-D: Deprecated declaration Control - give arg types
+../Core/Src/main.c(85): warning:  #1295-D: Deprecated declaration Control - give arg types
   void Control();
-../Core/Src/main.c(84): warning:  #1295-D: Deprecated declaration Set_params - give arg types
+../Core/Src/main.c(86): warning:  #1295-D: Deprecated declaration Set_params - give arg types
   void Set_params();
-../Core/Src/main.c: 4 warnings, 0 errors
+../Core/Src/main.c(246): warning:  #177-D: function "USART3_Proc"  was declared but never referenced
+  static void USART3_Proc(void)
+../Core/Src/main.c: 5 warnings, 0 errors
 linking...
-Program Size: Code=28032 RO-data=3616 RW-data=316 ZI-data=1804  
+Program Size: Code=29840 RO-data=3680 RW-data=324 ZI-data=1804  
 FromELF: creating hex file...
-"stm32_balance car\stm32_balance car.axf" - 0 Error(s), 4 Warning(s).
+"stm32_balance car\stm32_balance car.axf" - 0 Error(s), 5 Warning(s).
 
 <h2>Software Packages used:</h2>
 

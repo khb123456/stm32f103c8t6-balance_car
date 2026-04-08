@@ -98,8 +98,6 @@ void MPU6050_Proc_Complementary(void)
 	pitch=a*pitch_g+(1-a)*pitch_a;
 	roll=a*roll_g+(1-a)*roll_a;
 	
-//	nxt+=5;
-	
 }
 
 //初始化卡尔曼滤波器
@@ -200,7 +198,7 @@ int MPU6050_DMP_Init(void)
 	int_param.cb=NULL;   //如果不使用中断，可以设为NULL
 	if(mpu_init(&int_param)) return -1;    //初始化MPU（复位、配置时钟等）
 	if(dmp_load_motion_driver_firmware()) return -1; //加载DMP固件
-	if(dmp_set_fifo_rate(1000)) return -1;   //设置DMP输出速率（例如50Hz）
+	if(dmp_set_fifo_rate(10)) return -1;   //设置DMP输出速率（例如50Hz）
 	//设置DMP功能：六轴低功耗四元数、发送原始加速度、发送校准陀螺仪
 	unsigned short dmp_features=DMP_FEATURE_6X_LP_QUAT|		
 					DMP_FEATURE_SEND_RAW_ACCEL|

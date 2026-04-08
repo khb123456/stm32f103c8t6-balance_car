@@ -57,6 +57,7 @@
 /* USER CODE BEGIN PV */
 uint8_t ID;								
 float AX, AY, AZ, GX, GY, GZ,Tem;
+
 uint32_t sys_ticks=0;
 int Encoder_Left,Encoder_Right;
 uint8_t display_buf[20];
@@ -66,11 +67,12 @@ char uart_buf[128];
 uint8_t Rx_Flag;
 char RxPacket[100];
 int Ave_PWM;
+uint8_t Run_Flag=1;
 PID_TypeDef angle_pid={
-	.Kp=120.0f,
+	.Kp=3.0f,
 	.Ki=0.0f,
-	.Kd=-0.75f,
-	.out_max=5000.0f
+	.Kd=0.1f,
+	.out_max=800.0f
 };
 /* USER CODE END PV */
 
@@ -154,15 +156,8 @@ int main(void)
   HAL_UART_Receive_IT(&huart3,rx_buf,1);
   Load(0,0);
   DWT_Init();
-//  HAL_UART_Transmit(&huart3,"hello,world!\r\n",13,1000);
-//  IIC_Start();
-//  IIC_SendByte(0xD0);
-//  uint8_t Ack=IIC_ReceiveAck();
-//  IIC_Stop();
-//  OLED_ShowNum(0,2,Ack,3,16,1);
-//  OLED_ShowString(0,0,"ID:",16,0);
-//  ID=MPU6050_GetID();
-//  OLED_ShowNum(80,0,ID,4,16,0);
+  MPU6050_SetMode(MODE_COMPLEMENTARY);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -172,19 +167,6 @@ int main(void)
 //	SR04_Trigger();
 //	sprintf((char *)display_buf,"distance:%.1f cm ",distance);
 //	OLED_ShowString(0,0,(char *)display_buf,16,1);
-//	  MPU6050_UpData();
-//	MPU6050_GetData(&AX,&AY,&AZ,&GX,&GY,&GZ,&Tem);
-//	sprintf(uart_buf,"%f %f %f %.2f %f %f %f\r\n",AX,AY,AZ,Tem,GX,GY,GZ);
-//	  HAL_UART_Transmit(&huart3,(uint8_t *)uart_buf,strlen(uart_buf),100);
-//	  HAL_Delay(10);
-//	  printf("%f\r\n",GX);
-//	  OLED_ShowNum(0,2,AX,5,16,0);
-//	  OLED_ShowNum(64,2,AY,5,16,0);
-//	  OLED_ShowNum(0,4,AZ,5,16,0);
-//	  OLED_ShowNum(64,4,GX,5,16,0);
-//	  OLED_ShowNum(0,6,GY,5,16,0);
-//	  OLED_ShowNum(64,6,GZ,5,16,0);
-//	  OLED_ShowNum(0,8,Tem,5,16,0);
 //	  Read();
 //	  printf("Encoder_L: %d \n  Encoder_R:%d \r\n",Encoder_Left,Encoder_Right);
 //	  sprintf((char *)display_buf,"Encoder_L:%d\r\n",Encoder_Left);
@@ -195,23 +177,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	MPU6050_SetMode(MODE_DMP);
-//	uint32_t star_time,end_time,time;
-//	star_time=DWT_GetCycle();
-//	MPU6050_Mode_Update();
-////	Set_params();
-//	pitch=MPU6050_GetPitch();
-//	end_time=DWT_GetCycle();
-//	time=DWT_Cycle2Us(end_time-star_time);
-//	sprintf((char *)display_buf,"Pitch:%f\r\n",pitch);
-//	OLED_ShowString(0,0,(char *)display_buf,16,0);
-//	sprintf((char *)display_buf,"time:%d\r\n",time);
-//	OLED_ShowString(0,2,(char *)display_buf,16,0);
-//	printf("Pitch:%f\r\n time:%d\r\n",pitch,time);
-//	Load(2000,2000);
-//	Control();
-//	OLED_ShowNum(0,0,Ave_PWM,4,16,0);
-	USART3_Proc();
+
+	Set_params();
+	Control();
+
+
+
   }
   /* USER CODE END 3 */
 }
@@ -275,7 +246,6 @@ int fputc(int c,FILE *stream)
 static void USART3_Proc(void)
 {
 	PERIODIC(1);
-	MPU6050_SetMode(MODE_KALMAN);
 	uint32_t star_time,end_time,time;
 	star_time=HAL_GetTick();
 	MPU6050_Mode_Update();
@@ -315,18 +285,30 @@ void Set_params()
 }
 void Control()
 {
-	PERIODIC(10);
+	PERIODIC(5);
+	MPU6050_Mode_Update();
 	angle_pid.target=0.5f;
-//	angle_pid.actual=MPU6050_GetPitch();
-//	angle_pid.dif=MPU6050_GetGyroX();
-//	printf("Kp=%f,Ki=%f,Kd=%f,target=%f,actual=%f,dif=%f\r\n",angle_pid.Kp,angle_pid.Ki,angle_pid.Kd,
-//			angle_pid.target,angle_pid.actual,angle_pid.dif);
-	printf("%f\r\n",angle_pid.actual);
+	angle_pid.actual=MPU6050_GetPitch();
+	angle_pid.dif=MPU6050_GetGyroX();
+	
+	if(angle_pid.actual>50.0f||angle_pid.actual<-50.0f)
+	{
+		Run_Flag=0;
+	}
+	printf("Kp=%f,Kd=%f\nactual=%f,dif=%f\r\n",angle_pid.Kp,angle_pid.Kd,
+			angle_pid.actual,angle_pid.dif);
+	if(Run_Flag)
+	{
 	PID_Calculate(&angle_pid);
-//	Ave_PWM=(int)angle_pid.out;
-//	Load(Ave_PWM,Ave_PWM);
-//	printf("%d",Ave_PWM);
-	 
+	Ave_PWM=-((int)angle_pid.out);
+	Load(Ave_PWM,Ave_PWM);
+	}
+	else
+	{
+		Load(0,0);
+	}
+	printf("AvePWM:%d\n",Ave_PWM);
+//	 
 	
 }
 
