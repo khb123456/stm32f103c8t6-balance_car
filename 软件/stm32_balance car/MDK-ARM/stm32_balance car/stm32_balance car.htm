@@ -3,7 +3,7 @@
 <title>Static Call Graph - [stm32_balance car\stm32_balance car.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image stm32_balance car\stm32_balance car.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060528: Last Updated: Tue Apr 07 22:49:41 2026
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060528: Last Updated: Wed Apr 08 17:36:31 2026
 <BR><P>
 <H3>Maximum Stack Usage =        352 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -675,8 +675,6 @@ Global Symbols
 <P><STRONG><a name="[59]"></a>HAL_GetTick</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, stm32f1xx_hal.o(i.HAL_GetTick))
 <BR><BR>[Called By]<UL><LI><a href="#[d6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART3_Proc
 <LI><a href="#[c1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;dmp_read_fifo
-<LI><a href="#[b9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MPU6050_Proc_Kalman
-<LI><a href="#[b8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MPU6050_Proc_Complementary
 <LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_I2C_Mem_Write
 <LI><a href="#[58]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
 <LI><a href="#[9b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_Transmit
@@ -1174,7 +1172,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[35]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[ae]"></a>MPU6050_DMP_Init</STRONG> (Thumb, 96 bytes, Stack size 16 bytes, mpu6050.o(i.MPU6050_DMP_Init))
+<P><STRONG><a name="[ae]"></a>MPU6050_DMP_Init</STRONG> (Thumb, 98 bytes, Stack size 16 bytes, mpu6050.o(i.MPU6050_DMP_Init))
 <BR><BR>[Stack]<UL><LI>Max Depth = 160<LI>Call Chain = MPU6050_DMP_Init &rArr; dmp_load_motion_driver_firmware &rArr; mpu_load_firmware &rArr; mpu_read_mem &rArr; i2c_read &rArr; IIC_ReceiveByte &rArr; IIC_R_SDA &rArr; HAL_Delay_us
 </UL>
 <BR>[Calls]<UL><LI><a href="#[b4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;mpu_set_dmp_state
@@ -1220,8 +1218,8 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[d6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;USART3_Proc
 </UL>
 
-<P><STRONG><a name="[b8]"></a>MPU6050_Proc_Complementary</STRONG> (Thumb, 426 bytes, Stack size 72 bytes, mpu6050.o(i.MPU6050_Proc_Complementary))
-<BR><BR>[Stack]<UL><LI>Max Depth = 256<LI>Call Chain = MPU6050_Proc_Complementary &rArr; atan2 &rArr; atan &rArr; __kernel_poly &rArr; __aeabi_dmul &rArr; _double_epilogue &rArr; _double_round
+<P><STRONG><a name="[b8]"></a>MPU6050_Proc_Complementary</STRONG> (Thumb, 376 bytes, Stack size 64 bytes, mpu6050.o(i.MPU6050_Proc_Complementary))
+<BR><BR>[Stack]<UL><LI>Max Depth = 248<LI>Call Chain = MPU6050_Proc_Complementary &rArr; atan2 &rArr; atan &rArr; __kernel_poly &rArr; __aeabi_dmul &rArr; _double_epilogue &rArr; _double_round
 </UL>
 <BR>[Calls]<UL><LI><a href="#[42]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fsub
 <LI><a href="#[3f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fadd
@@ -1231,7 +1229,6 @@ Global Symbols
 <LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_ddiv
 <LI><a href="#[45]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dadd
 <LI><a href="#[51]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_d2f
-<LI><a href="#[59]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
 <LI><a href="#[bb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MPU6050_UpDate
 <LI><a href="#[ab]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fmul
 <LI><a href="#[bd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;atan2
@@ -1239,7 +1236,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[b7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MPU6050_Mode_Update
 </UL>
 
-<P><STRONG><a name="[b9]"></a>MPU6050_Proc_Kalman</STRONG> (Thumb, 414 bytes, Stack size 56 bytes, mpu6050.o(i.MPU6050_Proc_Kalman))
+<P><STRONG><a name="[b9]"></a>MPU6050_Proc_Kalman</STRONG> (Thumb, 380 bytes, Stack size 56 bytes, mpu6050.o(i.MPU6050_Proc_Kalman))
 <BR><BR>[Stack]<UL><LI>Max Depth = 240<LI>Call Chain = MPU6050_Proc_Kalman &rArr; atan2 &rArr; atan &rArr; __kernel_poly &rArr; __aeabi_dmul &rArr; _double_epilogue &rArr; _double_round
 </UL>
 <BR>[Calls]<UL><LI><a href="#[bc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_f2d
@@ -1248,7 +1245,6 @@ Global Symbols
 <LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_ddiv
 <LI><a href="#[45]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dadd
 <LI><a href="#[51]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_d2f
-<LI><a href="#[59]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
 <LI><a href="#[bb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MPU6050_UpDate
 <LI><a href="#[ac]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Kalman_Update
 <LI><a href="#[aa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Kalman_Predict
@@ -1709,10 +1705,10 @@ Global Symbols
 <P><STRONG><a name="[c1]"></a>dmp_read_fifo</STRONG> (Thumb, 462 bytes, Stack size 88 bytes, inv_mpu_dmp_motion_driver.o(i.dmp_read_fifo))
 <BR><BR>[Stack]<UL><LI>Max Depth = 176<LI>Call Chain = dmp_read_fifo &rArr; mpu_read_fifo_stream &rArr; mpu_reset_fifo &rArr; i2c_write &rArr; IIC_ReceiveAck &rArr; IIC_R_SDA &rArr; HAL_Delay_us
 </UL>
-<BR>[Calls]<UL><LI><a href="#[59]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
-<LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;decode_gesture
+<BR>[Calls]<UL><LI><a href="#[100]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;decode_gesture
 <LI><a href="#[f3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;mpu_reset_fifo
 <LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;mpu_read_fifo_stream
+<LI><a href="#[59]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
 </UL>
 <BR>[Called By]<UL><LI><a href="#[ba]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MPU6050_Update_DMP
 </UL>
@@ -2056,12 +2052,12 @@ Local Symbols
 <BR><BR>[Stack]<UL><LI>Max Depth = 352<LI>Call Chain = USART3_Proc &rArr; MPU6050_Mode_Update &rArr; MPU6050_Update_DMP &rArr; dmp_read_fifo &rArr; mpu_read_fifo_stream &rArr; mpu_reset_fifo &rArr; i2c_write &rArr; IIC_ReceiveAck &rArr; IIC_R_SDA &rArr; HAL_Delay_us
 </UL>
 <BR>[Calls]<UL><LI><a href="#[bc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_f2d
-<LI><a href="#[59]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
 <LI><a href="#[c0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MPU6050_SetMode
 <LI><a href="#[b7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MPU6050_Mode_Update
 <LI><a href="#[d7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MPU6050_GetYaw
 <LI><a href="#[d9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MPU6050_GetRoll
 <LI><a href="#[d8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MPU6050_GetPitch
+<LI><a href="#[59]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
 <LI><a href="#[da]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__2printf
 </UL>
 <BR>[Called By]<UL><LI><a href="#[35]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main

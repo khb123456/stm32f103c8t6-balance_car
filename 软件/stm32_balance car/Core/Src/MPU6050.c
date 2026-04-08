@@ -80,10 +80,7 @@ void MPU6050_Init(void)
 //MPU6050互补滤波的进程函数
 void MPU6050_Proc_Complementary(void)
 {
-//	static uint32_t  nxt=0;
-//	if(HAL_GetTick()<nxt)
-//		return;
-	PERIODIC(5);
+
 	//互补滤波
 	MPU6050_UpDate();
 	//通过陀螺仪的测量结果计算欧拉角
@@ -162,7 +159,7 @@ void Kalman_Update(KalmanFilter *kf,float measured_angle)
 //卡尔曼滤波进程函数
 void MPU6050_Proc_Kalman(void)
 {
-	PERIODIC(5);
+
 	MPU6050_UpDate();  //更新传感器数据
 	//计算加速度度计角度（用于卡尔曼滤波更新）
 	float pitch_a=atan2(ay,az)/3.1415727f*180.0f;
@@ -203,7 +200,7 @@ int MPU6050_DMP_Init(void)
 	int_param.cb=NULL;   //如果不使用中断，可以设为NULL
 	if(mpu_init(&int_param)) return -1;    //初始化MPU（复位、配置时钟等）
 	if(dmp_load_motion_driver_firmware()) return -1; //加载DMP固件
-	if(dmp_set_fifo_rate(5)) return -1;   //设置DMP输出速率（例如50Hz）
+	if(dmp_set_fifo_rate(1000)) return -1;   //设置DMP输出速率（例如50Hz）
 	//设置DMP功能：六轴低功耗四元数、发送原始加速度、发送校准陀螺仪
 	unsigned short dmp_features=DMP_FEATURE_6X_LP_QUAT|		
 					DMP_FEATURE_SEND_RAW_ACCEL|
@@ -234,7 +231,7 @@ static void MPU6050_Update_DMP(void){
 			
 			//计算欧拉角
 			roll=atan2f(2.0f*(q0*q1+q2*q3),1.0f-2.0f*(q1*q1+q2*q2))*57.29578f;
-			pitch=asinf(2.0f*(q0*q2-q3*q1)*57.29578);
+			pitch=asinf(2.0f*(q0*q2-q3*q1))*57.29578;
 			yaw=atan2f(2.0f*(q0*q3+q1*q2),1.0f-2.0f*(q2*q2+q3*q3))*57.29578f;
 		}
 	}

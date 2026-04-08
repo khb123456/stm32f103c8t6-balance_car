@@ -275,7 +275,7 @@ int fputc(int c,FILE *stream)
 static void USART3_Proc(void)
 {
 	PERIODIC(1);
-	MPU6050_SetMode(MODE_DMP);
+	MPU6050_SetMode(MODE_KALMAN);
 	uint32_t star_time,end_time,time;
 	star_time=HAL_GetTick();
 	MPU6050_Mode_Update();
