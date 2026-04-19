@@ -24,17 +24,32 @@ virtualFolder:
                 - path: ../Core/Inc/OLED.h
                 - path: ../Core/Inc/OLED_Font.h
                 - path: ../Core/Src/OLED_Font.c
-                - path: ../Core/Src/main.c
-                - path: ../Core/Src/gpio.c
-                - path: ../Core/Src/i2c.c
-                - path: ../Core/Src/stm32f1xx_it.c
-                - path: ../Core/Src/stm32f1xx_hal_msp.c
                 - path: ../Core/Src/MPU6050.c
                 - path: ../Core/Inc/MPU6050.h
                 - path: ../Core/Inc/MyI2C.h
                 - path: ../Core/Src/MyI2C.c
-                - path: ../Core/Src/attitude.c
-                - path: ../Core/Inc/attitude.h
+                - path: ../Core/Src/sr04.c
+                - path: ../Core/Inc/sr04.h
+                - path: ../Core/Src/motor.c
+                - path: ../Core/Inc/motor.h
+                - path: ../Core/Src/encoder.c
+                - path: ../Core/Inc/encoder.h
+                - path: ../Core/Inc/task.h
+                - path: ../Core/Src/inv_mpu.c
+                - path: ../Core/Src/inv_mpu_dmp_motion_driver.c
+                - path: ../Core/Inc/dmpKey.h
+                - path: ../Core/Inc/dmpmap.h
+                - path: ../Core/Inc/inv_mpu.h
+                - path: ../Core/Inc/inv_mpu_dmp_motion_driver.h
+                - path: ../Core/Src/pid.c
+                - path: ../Core/Inc/pid.h
+                - path: ../Core/Src/main.c
+                - path: ../Core/Src/gpio.c
+                - path: ../Core/Src/i2c.c
+                - path: ../Core/Src/tim.c
+                - path: ../Core/Src/usart.c
+                - path: ../Core/Src/stm32f1xx_it.c
+                - path: ../Core/Src/stm32f1xx_hal_msp.c
               folders: []
     - name: Drivers
       files: []
@@ -53,6 +68,9 @@ virtualFolder:
             - path: ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_flash.c
             - path: ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_flash_ex.c
             - path: ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_exti.c
+            - path: ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim.c
+            - path: ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.c
+            - path: ../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.c
           folders: []
         - name: CMSIS
           files:
@@ -81,6 +99,7 @@ targets:
         - RTE/_stm32_balance car
       libList: []
     excludeList: []
+    settings: {}
     toolchain: AC5
     toolchainConfigMap:
       AC5:
@@ -98,7 +117,7 @@ targets:
             C_FLAGS: --diag_suppress=1 --diag_suppress=1295
             c99-mode: true
             one-elf-section-per-function: true
-            optimization: level-3
+            optimization: level-0
             warnings: all-warnings
           global:
             output-debug-info: enable

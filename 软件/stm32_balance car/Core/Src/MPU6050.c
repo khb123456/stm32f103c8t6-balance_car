@@ -103,15 +103,15 @@ void MPU6050_Proc_Complementary(void)
 //初始化卡尔曼滤波器
 void Kalman_Init(KalmanFilter *kf)
 {
-	kf->Q_angle=0.001f;  //过程噪声（角度）
-	kf->Q_bias=0.003f;   //过程噪声（漂移）
-	kf->R_measure=0.03f;  //测量噪声（加速度计）
+	kf->Q_angle=0.01f;  //过程噪声（角度）
+	kf->Q_bias=0.001f;   //过程噪声（漂移）
+	kf->R_measure=0.1f;  //测量噪声（加速度计）
 	kf->angle=0.0f;		//初始角度
 	kf->bias=0.0f;		//初始漂移
-	kf->P[0][0]=0.0f;	//初始化误差协方差矩阵
+	kf->P[0][0]=1.0f;	//初始化误差协方差矩阵
 	kf->P[0][1]=0.0f;
 	kf->P[1][0]=0.0f;
-	kf->P[1][1]=0.0f;
+	kf->P[1][1]=1.0f;
 	
 }
 
@@ -125,7 +125,7 @@ void Kalman_Predict(KalmanFilter *kf,float gyro_rate,float dt)
 	kf->P[0][0]+=dt*(dt*kf->P[1][1]-kf->P[0][1]-kf->P[1][0]+kf->Q_angle);
 	kf->P[0][1]-=dt*kf->P[1][1];
 	kf->P[1][0]-=dt*kf->P[1][1];
-	kf->P[1][1]+=kf->Q_bias*dt;
+	kf->P[1][1]+=kf->Q_bias;
 }
 
 //卡尔曼滤波器更新步骤

@@ -20,3 +20,8 @@ options:
         virtualPathFiles:
             <virtual_root>/Application/User/Core/gpio.c: ""
             <virtual_root>/Application/User/Core/i2c.c: ""
+            <virtual_root>/Application/User/Core/tim.c: ""
+            <virtual_root>/Application/User/Core/usart.c: ""
+            <virtual_root>/Drivers/STM32F1xx_HAL_Driver/stm32f1xx_hal_tim.c: ""
+            <virtual_root>/Drivers/STM32F1xx_HAL_Driver/stm32f1xx_hal_tim_ex.c: ""
+            <virtual_root>/Drivers/STM32F1xx_HAL_Driver/stm32f1xx_hal_uart.c: ""

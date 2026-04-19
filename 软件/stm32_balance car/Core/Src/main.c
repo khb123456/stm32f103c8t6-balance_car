@@ -69,9 +69,9 @@ char RxPacket[100];
 int Ave_PWM;
 uint8_t Run_Flag=1;
 PID_TypeDef angle_pid={
-	.Kp=3.0f,
+	.Kp=0.0f,
 	.Ki=0.0f,
-	.Kd=0.1f,
+	.Kd=0.0f,
 	.out_max=800.0f
 };
 /* USER CODE END PV */
@@ -156,7 +156,7 @@ int main(void)
   HAL_UART_Receive_IT(&huart3,rx_buf,1);
   Load(0,0);
   DWT_Init();
-  MPU6050_SetMode(MODE_COMPLEMENTARY);
+  MPU6050_SetMode(MODE_KALMAN);
 
   /* USER CODE END 2 */
 
@@ -271,10 +271,15 @@ void Set_params()
 			{
 				angle_pid.Kp=atof(Value);
 			}
+			else if(strcmp(Name,"angle_ki")==0)
+			{
+				angle_pid.Ki=atof(Value);
+			}
 			else if(strcmp(Name,"angle_kd")==0)
 			{
 				angle_pid.Kd=atof(Value);
 			}
+
 		}
 		
 			Rx_Flag=0;
@@ -285,13 +290,15 @@ void Set_params()
 }
 void Control()
 {
-	PERIODIC(5);
+	PERIODIC(10);
 	MPU6050_Mode_Update();
-	angle_pid.target=0.5f;
+	angle_pid.target=-3.0f;
 	angle_pid.actual=MPU6050_GetPitch();
 	angle_pid.dif=MPU6050_GetGyroX();
-	
-	if(angle_pid.actual>50.0f||angle_pid.actual<-50.0f)
+//	sprintf((char *)display_buf,"Pitch:%f\r\n",angle_pid.actual);
+//	OLED_ShowString(0,2,(char*)display_buf,16,0);
+//	printf("angle:%f\n time:%d\n",angle_pid.actual,HAL_GetTick());
+	if(angle_pid.actual>30.0f||angle_pid.actual<-30.0f)
 	{
 		Run_Flag=0;
 	}
@@ -308,7 +315,7 @@ void Control()
 		Load(0,0);
 	}
 	printf("AvePWM:%d\n",Ave_PWM);
-//	 
+	 
 	
 }
 
