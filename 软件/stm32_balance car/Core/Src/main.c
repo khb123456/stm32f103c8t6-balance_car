@@ -56,7 +56,10 @@
 
 /* USER CODE BEGIN PV */
 uint8_t ID;								
-float AX, AY, AZ, GX, GY, GZ,Tem;
+int16_t AX, AY, AZ, GX, GY, GZ,Tem;
+float AngleAcc;			//由加速度计得到的角度值
+float AngleGyro;		//由陀螺仪得到的角度值，执行互补滤波后，此值基本与Angle相等
+float Angle;			//互补滤波后的角度值，准确且无漂移
 
 uint32_t sys_ticks=0;
 int Encoder_Left,Encoder_Right;
@@ -66,13 +69,24 @@ extern uint8_t rx_buf[2];
 char uart_buf[128];
 uint8_t Rx_Flag;
 char RxPacket[100];
-int Ave_PWM;
+int16_t LeftPWM, RightPWM;			//左PWM，右PWM
+int16_t Ave_PWM, Dif_PWM;				//平均PWM，差分PWM
+
+float LeftSpeed, RightSpeed;		//左速度，右速度
+float AveSpeed, DifSpeed;			//平均速度，差分速度
 uint8_t Run_Flag=1;
+volatile uint8_t control_flag = 0;    // 新增：由定时器置位，主循环执行 Control
 PID_TypeDef angle_pid={
 	.Kp=0.0f,
 	.Ki=0.0f,
 	.Kd=0.0f,
-	.out_max=800.0f
+	.out_max=90.0f
+};
+PID_TypeDef speed_pid={
+	.Kp=0.0f,
+	.Ki=0.0f,
+	.Kd=0.0f,
+	.out_max=20.0f
 };
 /* USER CODE END PV */
 
@@ -84,24 +98,6 @@ int fputc(int c,FILE *stream);
 static void USART3_Proc(void);
 void Control();
 void Set_params();
-void DWT_Init(void)
-{
-    DEM_CR |= DEM_CR_TRCENA;   
-    DWT_CYCCNT = 0;           
-    DWT_CR |= DWT_CR_CYCCNTENA;
-}
-
-// 获取当前CPU周期
-uint32_t DWT_GetCycle(void)
-{
-    return DWT_CYCCNT;
-}
-
-// 转微秒
-uint32_t DWT_Cycle2Us(uint32_t cycle)
-{
-    return cycle / (SystemCoreClock / 1000000);
-}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -155,35 +151,29 @@ int main(void)
   HAL_TIM_Encoder_Start(&htim4,TIM_CHANNEL_ALL);
   HAL_UART_Receive_IT(&huart3,rx_buf,1);
   Load(0,0);
-  DWT_Init();
-  MPU6050_SetMode(MODE_KALMAN);
-
+  MPU6050_SetMode(MODE_COMPLEMENTARY);
+  HAL_TIM_Base_Start_IT(&htim3);
+  /* 一次性初始化 PID，避免主循环反复初始化引起不稳定 */
+  PID_Init(&angle_pid);
+  PID_Init(&speed_pid);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//	SR04_Trigger();
-//	sprintf((char *)display_buf,"distance:%.1f cm ",distance);
-//	OLED_ShowString(0,0,(char *)display_buf,16,1);
-//	  Read();
-//	  printf("Encoder_L: %d \n  Encoder_R:%d \r\n",Encoder_Left,Encoder_Right);
-//	  sprintf((char *)display_buf,"Encoder_L:%d\r\n",Encoder_Left);
-//	  OLED_ShowString(0,0,(char*)display_buf,16,0);
-//	  sprintf((char *)display_buf,"Encoder_R:%d\r\n",Encoder_Right);
-//	  OLED_ShowString(0,2,(char*)display_buf,16,0);
-//	 HAL_UART_Transmit(&huart3,display_buf,sizeof(display_buf),1000);
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
-
-	Set_params();
-	Control();
-
-
-
+    /* 仅做低频任务或参数更新，主控制交给定时中断置位，由主循环执行 Control */
+    Set_params();          // 非阻塞地更新 PID/目标参数
+    if (control_flag) {
+        control_flag = 0;
+        Control();         // 在主循环调用，避免中断内做 I2C 阻塞
+    }
+    HAL_Delay(2);          // 少量延时，保持响应性
   }
+  /* USER CODE END WHILE */
+
+  /* USER CODE BEGIN 3 */
+  /* 主循环已处理所有逻辑，已删除多余代码片段以修复编译错误 */
   /* USER CODE END 3 */
 }
 
@@ -229,11 +219,16 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void Read(void)
 {
-	if(uwTick-sys_ticks<10)
+	if(uwTick-sys_ticks<20)
 		return;
 	sys_ticks=uwTick;
 	Encoder_Left=Read_Speed(&htim2);
 	Encoder_Right=-Read_Speed(&htim4);
+	LeftSpeed=Encoder_Left/13.0f/20.0f/0.002f;
+	RightSpeed=Encoder_Right/13.0f/20.0f/0.002f;
+	
+	AveSpeed=(LeftSpeed+RightSpeed)/2.0f;
+	DifSpeed=LeftSpeed-RightSpeed;
 }
 
 int fputc(int c,FILE *stream)
@@ -252,9 +247,10 @@ static void USART3_Proc(void)
 	yaw=MPU6050_GetYaw();
 	pitch=MPU6050_GetPitch();
 	roll=MPU6050_GetRoll();
+	GX=MPU6050_GetGyroY();
 	end_time=HAL_GetTick();
 	time=end_time-star_time;
-	printf("%f,%f,%f\r\ntime:%d\n",yaw,pitch,roll,time);
+	printf("%f,%f,%f,%f\r\ntime:%d\n",yaw,pitch,roll,GX,time);
 	
 }
 void Set_params()
@@ -279,8 +275,31 @@ void Set_params()
 			{
 				angle_pid.Kd=atof(Value);
 			}
+			else if(strcmp(Name,"speed_kp")==0)
+			{
+				speed_pid.Kp=atof(Value);
+			}
+			else if(strcmp(Name,"speed_ki")==0)
+			{
+				speed_pid.Ki=atof(Value);   // 修正：写入 Ki
+			}
+			else if(strcmp(Name,"speed_kd")==0)
+			{
+				speed_pid.Kd=atof(Value);
+			}
 
 		}
+		else if (strcmp(Tag, "joystick") == 0)			//Tag为joystick，收到摇杆数据包
+			{
+				int8_t LH = atoi(strtok(NULL, ","));		//提取数据2，定义为摇杆值LH
+				int8_t LV = atoi(strtok(NULL, ","));		//提取数据3，定义为摇杆值LV
+				int8_t RH = atoi(strtok(NULL, ","));		//提取数据4，定义为摇杆值RH
+				int8_t RV = atoi(strtok(NULL, ","));		//提取数据5，定义为摇杆值RV
+				
+				/*执行摇杆操作*/
+				speed_pid.target = LV / 25.0;	//摇杆值LV缩放后，控制速度环目标值，前后行进控制
+				Dif_PWM = RH / 2;				//摇杆值RH缩放后，控制差分PWM，左右转弯控制
+			}
 		
 			Rx_Flag=0;
 
@@ -290,35 +309,31 @@ void Set_params()
 }
 void Control()
 {
-	PERIODIC(10);
-	MPU6050_Mode_Update();
-	angle_pid.target=-3.0f;
-	angle_pid.actual=MPU6050_GetPitch();
-	angle_pid.dif=MPU6050_GetGyroX();
-//	sprintf((char *)display_buf,"Pitch:%f\r\n",angle_pid.actual);
-//	OLED_ShowString(0,2,(char*)display_buf,16,0);
-//	printf("angle:%f\n time:%d\n",angle_pid.actual,HAL_GetTick());
-	if(angle_pid.actual>30.0f||angle_pid.actual<-30.0f)
-	{
-		Run_Flag=0;
-	}
-	printf("Kp=%f,Kd=%f\nactual=%f,dif=%f\r\n",angle_pid.Kp,angle_pid.Kd,
-			angle_pid.actual,angle_pid.dif);
-	if(Run_Flag)
-	{
-	PID_Calculate(&angle_pid);
-	Ave_PWM=-((int)angle_pid.out);
-	Load(Ave_PWM,Ave_PWM);
-	}
-	else
-	{
-		Load(0,0);
-	}
-	printf("AvePWM:%d\n",Ave_PWM);
-	 
-	
-}
+    /* 假设此函数由定时器以固定周期（例如 10 ms）调用 */
+    MPU6050_Mode_Update();
+    /* 单角度环：目标先保持 0（可微调小偏置），屏蔽速度外环与摇杆 */
+    angle_pid.target =-0.2f;
+    angle_pid.actual = MPU6050_GetPitch();
+    
+    /* 超限保护 */
+    if (angle_pid.actual > 50.0f || angle_pid.actual < -50.0f) {
+        Load(0,0);
+        return;
+    }
 
+    PID_Calculate(&angle_pid);
+    Ave_PWM = -((int)angle_pid.out);
+    LeftPWM = Ave_PWM + Dif_PWM/2;
+    RightPWM = Ave_PWM - Dif_PWM/2;
+
+    /* 输出限幅 */
+    if (LeftPWM > 100) LeftPWM = 100;
+    if (LeftPWM < -100) LeftPWM = -100;
+    if (RightPWM > 100) RightPWM = 100;
+    if (RightPWM < -100) RightPWM = -100;
+
+    Load(LeftPWM, RightPWM);
+}
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	static uint8_t RxState=0;
@@ -353,7 +368,20 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		HAL_UART_Receive_IT(&huart3,rx_buf,1);
 	}
 }
+
 /* USER CODE END 4 */
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  static uint16_t Count0 = 0;
+  if (htim->Instance == TIM3) {
+    Count0++;
+    if (Count0 >= 5) {
+      control_flag = 1;   // 置标志，主循环处理具体控制与 I2C
+      Count0 = 0;
+    }
+  }
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
@@ -369,8 +397,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

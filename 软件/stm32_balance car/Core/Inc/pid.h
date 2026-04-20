@@ -17,9 +17,6 @@ typedef struct{
 	float out;
 	float out_max;
 }PID_TypeDef;
-#define PWM_MAX  7200
-#define PWM_MIN -7200
-int GetCurrentSpeed();
-int GetDifSpeed();
 void PID_Calculate(PID_TypeDef *pid);
+void PID_Init(PID_TypeDef *pid);
 #endif

@@ -500,14 +500,24 @@
               <FilePath>..\Core\Inc\inv_mpu_dmp_motion_driver.h</FilePath>
             </File>
             <File>
+              <FileName>pid.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Core\Inc\pid.h</FilePath>
+            </File>
+            <File>
               <FileName>pid.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Core\Src\pid.c</FilePath>
             </File>
             <File>
-              <FileName>pid.h</FileName>
+              <FileName>i2c_bus.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\Core\Inc\pid.h</FilePath>
+              <FilePath>..\Core\Inc\i2c_bus.h</FilePath>
+            </File>
+            <File>
+              <FileName>i2c_bus.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\i2c_bus.c</FilePath>
             </File>
             <File>
               <FileName>main.c</FileName>
