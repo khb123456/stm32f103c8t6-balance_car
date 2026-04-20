@@ -2,7 +2,7 @@
 
 
 KalmanFilter kf_pitch,kf_roll;
-float a=0.95238; //互补滤波系数
+float a=0.99; //互补滤波系数
 static AttitudeMode currentMode=MODE_KALMAN;
 void MPU6050_WriteReg(uint8_t RegAddress,uint8_t Data)
 {

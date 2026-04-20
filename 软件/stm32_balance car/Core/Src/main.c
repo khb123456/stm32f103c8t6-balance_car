@@ -77,9 +77,9 @@ float AveSpeed, DifSpeed;			//平均速度，差分速度
 uint8_t Run_Flag=1;
 volatile uint8_t control_flag = 0;    // 新增：由定时器置位，主循环执行 Control
 PID_TypeDef angle_pid={
-	.Kp=0.0f,
-	.Ki=0.0f,
-	.Kd=0.0f,
+	.Kp=6.5f,
+	.Ki=0.1f,
+	.Kd=0.05f,
 	.out_max=90.0f
 };
 PID_TypeDef speed_pid={
@@ -376,7 +376,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   static uint16_t Count0 = 0;
   if (htim->Instance == TIM3) {
     Count0++;
-    if (Count0 >= 5) {
+    if (Count0 >= 10) {
+      
       control_flag = 1;   // 置标志，主循环处理具体控制与 I2C
       Count0 = 0;
     }
