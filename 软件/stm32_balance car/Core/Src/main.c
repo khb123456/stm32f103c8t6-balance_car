@@ -54,14 +54,14 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-/* USER CODE BEGIN PV */							
+/* USER CODE BEGIN PV */
 int16_t AX, AY, AZ, GX, GY, GZ,Tem;
 
-uint32_t sys_ticks=0;
+
 
 int Encoder_Left,Encoder_Right;
 extern float distance;
-extern uint8_t rx_buf[2];
+uint8_t rx_buf[2];
 char uart_buf[128];
 uint8_t Rx_Flag;
 char RxPacket[100];
@@ -73,23 +73,23 @@ float AveSpeed, DifSpeed;			//平均速度，差分速度
 uint8_t Run_Flag=1;
 volatile uint8_t control_flag = 0;    // 新增：由定时器置位，主循环执行 Control
 PID_TypeDef angle_pid={
-	.Kp=3.0f,
-	.Ki=0.1f,
-	.Kd=0.6f,
-	.out_max=90.0f
+	.Kp=5.0f,
+	.Ki=0.0f,
+	.Kd=0.1f,
+	.out_max=900.0f
 };
 PID_TypeDef speed_pid={
 	.Kp=0.0f,
 	.Ki=0.0f,
 	.Kd=0.0f,
-	.out_max=15.0f
+	.out_max=10.0f
 };
 PID_TypeDef turn_pid=
 {
 	.Kp=0.0f,
 	.Ki=0.0f,
 	.Kd=0.0f,
-	.out_max=20.0f
+	.out_max=200.0f
 };
 /* USER CODE END PV */
 
@@ -99,8 +99,8 @@ void SystemClock_Config(void);
 void Read(void);
 int fputc(int c,FILE *stream);
 static void OLED_Proc(void);
-void Control(void);
 void Set_params(void);
+void Control(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -156,34 +156,26 @@ int main(void)
   Load(0,0);
   MPU6050_SetMode(MODE_COMPLEMENTARY);
   HAL_TIM_Base_Start_IT(&htim3);
+  PID_Init(&angle_pid);
+  PID_Init(&speed_pid);
+  PID_Init(&turn_pid);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* 仅做低频任务或参数更新，主控制交给定时中断置位，由主循环执行 Control */
-    Set_params();          // 非阻塞地更新 PID/目标参数
-	if(Run_Flag==0)
-	{
-	PID_Init(&angle_pid);
-	PID_Init(&speed_pid);
-	PID_Init(&turn_pid);
-    if (control_flag) 
-	{
-        control_flag = 0;
-        Control();         // 在主循环调用，避免中断内做I2C阻塞
+	if (control_flag)
+    {
+      control_flag = 0;
+      Control();
     }
-	Run_Flag=1;
-	}
-	else
-	{
-	Run_Flag=0;
-	}	
-  }
-  /* USER CODE END WHILE */
+	  Set_params();          // 非阻塞地更新 PID/目标参数
 
-  /* USER CODE BEGIN 3 */
+  }
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
 }
 
@@ -229,17 +221,15 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void Read(void)
 {
-//	if(uwTick-sys_ticks<20)
-//		return;
-//	sys_ticks=uwTick;
 	Encoder_Left=Read_Speed(&htim2);
 	Encoder_Right=-Read_Speed(&htim4);
 	
-	LeftSpeed=Encoder_Left/13.0f/20.0f/0.002f;
-	RightSpeed=Encoder_Right/13.0f/20.0f/0.002f;
+	LeftSpeed=Encoder_Left/13.0f/20.0f/0.05f;
+	RightSpeed=Encoder_Right/13.0f/20.0f/0.05f;
 	
 	AveSpeed=(LeftSpeed+RightSpeed)/2.0f;
 	DifSpeed=LeftSpeed-RightSpeed;
+	
 }
 
 int fputc(int c,FILE *stream)
@@ -251,7 +241,7 @@ int fputc(int c,FILE *stream)
 
 static void OLED_Proc(void)
 {
-	PERIODIC(500);	
+	OLED_Clear();
 	OLED_Printf(0,0,0,12,"Angle");
 	OLED_Printf(0,1,0,12,"P:%05.2f",angle_pid.Kp);
 	OLED_Printf(0,2,0,12,"I:%05.2f",angle_pid.Ki);
@@ -333,35 +323,47 @@ void Set_params(void)
 
 	}
 //	printf("[plot,%f,%f]",angle_pid.target,angle_pid.actual);
-	
 }
+
 void Control(void)
 {
-    /* 假设此函数由定时器以固定周期（例如 10 ms）调用 */
-    MPU6050_Mode_Update();
-    /* 单角度环：目标先保持 0（可微调小偏置），屏蔽速度外环与摇杆 */
-//    angle_pid.target =-0.2f;
+		MPU6050_Mode_Update();
+		angle_pid.actual = MPU6050_GetPitch();
+		 /* 超限保护 */
+		if (angle_pid.actual > 50.0f || angle_pid.actual < -50.0f) 
+		{
+			Load(0,0);
+			Run_Flag=0;
+		}
+		if(Run_Flag)
+		{
+		speed_pid.actual=AveSpeed;
+		PID_Calculate(&speed_pid);
+		angle_pid.target=speed_pid.out-0.2f;
+			
+		PID_Calculate(&angle_pid);
+		Ave_PWM = -((int)angle_pid.out);
+					
+		turn_pid.actual=DifSpeed;
+		PID_Calculate(&turn_pid);
+		Dif_PWM=turn_pid.out;
+			
+		LeftPWM = Ave_PWM + Dif_PWM/2;
+		RightPWM = Ave_PWM - Dif_PWM/2;
 
-    angle_pid.actual = MPU6050_GetPitch();
-    
-    /* 超限保护 */
-    if (angle_pid.actual > 50.0f || angle_pid.actual < -50.0f) {
-        Load(0,0);
-        return;
-    }
+		/* 输出限幅 */
+		if (LeftPWM > 100) LeftPWM = 100;
+		if (LeftPWM < -100) LeftPWM = -100;
+		if (RightPWM > 100) RightPWM = 100;
+		if (RightPWM < -100) RightPWM = -100;
 
-    PID_Calculate(&angle_pid);
-    Ave_PWM = -((int)angle_pid.out);
-    LeftPWM = Ave_PWM + Dif_PWM/2;
-    RightPWM = Ave_PWM - Dif_PWM/2;
-
-    /* 输出限幅 */
-    if (LeftPWM > 100) LeftPWM = 100;
-    if (LeftPWM < -100) LeftPWM = -100;
-    if (RightPWM > 100) RightPWM = 100;
-    if (RightPWM < -100) RightPWM = -100;
-
-    Load(LeftPWM, RightPWM);
+		Load(LeftPWM, RightPWM);
+	    }
+		else
+		{
+		Load(0,0);
+		}
+	
 }
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
@@ -398,37 +400,30 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	}
 }
 
-/* USER CODE END 4 */
-
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-  static uint16_t Count0 ,Count1,Count2;
-  if (htim->Instance == TIM3) {
-    Count0++;
+	static uint16_t Count0,Count1;
+	if (htim->Instance == TIM3) 
+	 {
+		Count0++;
+		 if(Count0>=10)
+		 {
+			Count0=0;
+			control_flag=1;
+		 }
+		 Count1++;
+		 if(Count1>=50)
+		 {
+			 Count1=0;
+			 Read();
+		 }
+	 
+	 }
+
 	
-    if (Count0 >= 5) {
-      
-      control_flag = 1;   // 置标志，主循环处理具体控制
-      Count0 = 0;
-    }
-	Count1++;
-	if(Count1>=30)
-	{
-		Count1=0;
-		Read();
-		if(Run_Flag)
-		{
-		speed_pid.actual=AveSpeed;
-		PID_Calculate(&speed_pid);
-		angle_pid.target=speed_pid.out-0.2f;
-			
-		turn_pid.actual=DifSpeed;
-		PID_Calculate(&turn_pid);
-		Dif_PWM=turn_pid.out;
-		}
-	}
-  }
+  
 }
+/* USER CODE END 4 */
 
 /**
   * @brief  This function is executed in case of error occurrence.

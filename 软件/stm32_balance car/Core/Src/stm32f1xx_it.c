@@ -41,7 +41,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-uint8_t rx_buf[2];
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
