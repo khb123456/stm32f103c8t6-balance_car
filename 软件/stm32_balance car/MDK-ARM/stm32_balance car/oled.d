@@ -32,3 +32,7 @@ stm32_balance car\oled.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_
 stm32_balance car\oled.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
 stm32_balance car\oled.o: ../Core/Inc/oled_font.h
 stm32_balance car\oled.o: ../Core/Inc/i2c_bus.h
+stm32_balance car\oled.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdarg.h
+stm32_balance car\oled.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdio.h
+stm32_balance car\oled.o: D:\keil5\ARM\ARMCC\Bin\..\include\math.h
+stm32_balance car\oled.o: D:\keil5\ARM\ARMCC\Bin\..\include\string.h

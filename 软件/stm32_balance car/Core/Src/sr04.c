@@ -4,11 +4,6 @@ float distance;
 
 void HAL_Delay_us(uint32_t us)
 {
-//	uint32_t delay=(SystemCoreClock/1000000)*us;
-//	while(delay--)
-//	{
-//		__nop();
-//	}
 	uint32_t ticks = (HAL_RCC_GetHCLKFreq() / 1000000) * us;
     uint32_t start = SysTick->VAL;
     while((start - SysTick->VAL) < ticks);

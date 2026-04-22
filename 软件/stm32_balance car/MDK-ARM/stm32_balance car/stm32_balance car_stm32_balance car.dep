@@ -1,8 +1,8 @@
 Dependencies for Project 'stm32_balance car', Target 'stm32_balance car': (DO NOT MODIFY !)
 CompilerVersion: 5060528::V5.06 update 5 (build 528)::ARMCC
 F (startup_stm32f103xb.s)(0x69E4E714)(--cpu Cortex-M3 -g --apcs=interwork --pd "__MICROLIB SETA 1"-I.\RTE\_stm32_balance_car-ID:\keil5\ARM\CMSIS\6.1.0\CMSIS\Core\Include-ID:\keil5\Keil\STM32F1xx_DFP\2.4.1\Device\Include--pd "__UVISION_VERSION SETA 538" --pd "_RTE_ SETA 1" --pd "STM32F10X_MD SETA 1" --pd "_RTE_ SETA 1"--list startup_stm32f103xb.lst --xref -o "stm32_balance car\startup_stm32f103xb.o" --depend "stm32_balance car\startup_stm32f103xb.d")
-F (..\Core\Src\OLED.c)(0x69DB97CE)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include-I.\RTE\_stm32_balance_car-ID:\keil5\ARM\CMSIS\6.1.0\CMSIS\Core\Include-ID:\keil5\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o "stm32_balance car\oled.o" --omf_browse "stm32_balance car\oled.crf" --depend "stm32_balance car\oled.d")
-I (../Core/Inc/oled.h)(0x69DB8505)
+F (..\Core\Src\OLED.c)(0x69E88FA0)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include-I.\RTE\_stm32_balance_car-ID:\keil5\ARM\CMSIS\6.1.0\CMSIS\Core\Include-ID:\keil5\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o "stm32_balance car\oled.o" --omf_browse "stm32_balance car\oled.crf" --depend "stm32_balance car\oled.d")
+I (../Core/Inc/oled.h)(0x69E88F8C)
 I (../Core/Inc/main.h)(0x69D6555F)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x69D7C123)
 I (../Core/Inc/stm32f1xx_hal_conf.h)(0x69BE3D50)
@@ -34,7 +34,11 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x69D7C123)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x69D7C123)
 I (../Core/Inc/oled_font.h)(0x69DB141F)
 I (../Core/Inc/i2c_bus.h)(0x69DCFCA6)
-F (..\Core\Inc\OLED.h)(0x69DB8505)()
+I (D:\keil5\ARM\ARMCC\include\stdarg.h)(0x588B8344)
+I (D:\keil5\ARM\ARMCC\include\stdio.h)(0x588B8344)
+I (D:\keil5\ARM\ARMCC\include\math.h)(0x588B8344)
+I (D:\keil5\ARM\ARMCC\include\string.h)(0x588B8344)
+F (..\Core\Inc\OLED.h)(0x69E88F8C)()
 F (..\Core\Inc\OLED_Font.h)(0x69DB141F)()
 F (..\Core\Src\OLED_Font.c)(0x69DB141F)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include-I.\RTE\_stm32_balance_car-ID:\keil5\ARM\CMSIS\6.1.0\CMSIS\Core\Include-ID:\keil5\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o "stm32_balance car\oled_font.o" --omf_browse "stm32_balance car\oled_font.crf" --depend "stm32_balance car\oled_font.d")
 I (../Core/Inc/OLED_Font.h)(0x69DB141F)
@@ -111,7 +115,7 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x69D7C123)
 I (../Core/Inc/sr04.h)(0x69BC0404)
 I (../Core/Inc/main.h)(0x69D6555F)
 I (../Core/Inc/tim.h)(0x69BCFBD7)
-F (..\Core\Src\sr04.c)(0x69C09874)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include-I.\RTE\_stm32_balance_car-ID:\keil5\ARM\CMSIS\6.1.0\CMSIS\Core\Include-ID:\keil5\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o "stm32_balance car\sr04.o" --omf_browse "stm32_balance car\sr04.crf" --depend "stm32_balance car\sr04.d")
+F (..\Core\Src\sr04.c)(0x69E88CBA)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include-I.\RTE\_stm32_balance_car-ID:\keil5\ARM\CMSIS\6.1.0\CMSIS\Core\Include-ID:\keil5\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o "stm32_balance car\sr04.o" --omf_browse "stm32_balance car\sr04.crf" --depend "stm32_balance car\sr04.d")
 I (../Core/Inc/sr04.h)(0x69BC0404)
 I (../Core/Inc/main.h)(0x69D6555F)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x69D7C123)
@@ -296,7 +300,7 @@ F (..\Core\Inc\dmpmap.h)(0x69C382A4)()
 F (..\Core\Inc\inv_mpu.h)(0x69C39F39)()
 F (..\Core\Inc\inv_mpu_dmp_motion_driver.h)(0x69C382A4)()
 F (..\Core\Inc\pid.h)(0x69E4E272)()
-F (..\Core\Src\pid.c)(0x69E60C67)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include-I.\RTE\_stm32_balance_car-ID:\keil5\ARM\CMSIS\6.1.0\CMSIS\Core\Include-ID:\keil5\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o "stm32_balance car\pid.o" --omf_browse "stm32_balance car\pid.crf" --depend "stm32_balance car\pid.d")
+F (..\Core\Src\pid.c)(0x69E89324)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include-I.\RTE\_stm32_balance_car-ID:\keil5\ARM\CMSIS\6.1.0\CMSIS\Core\Include-ID:\keil5\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o "stm32_balance car\pid.o" --omf_browse "stm32_balance car\pid.crf" --depend "stm32_balance car\pid.d")
 I (../Core/Inc/pid.h)(0x69E4E272)
 I (../Core/Inc/main.h)(0x69D6555F)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x69D7C123)
@@ -369,7 +373,7 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x69D7C123)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x69D7C123)
 I (../Core/Inc/i2c.h)(0x69BA5993)
 I (../Core/Inc/main.h)(0x69D6555F)
-F (../Core/Src/main.c)(0x69E63B14)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include-I.\RTE\_stm32_balance_car-ID:\keil5\ARM\CMSIS\6.1.0\CMSIS\Core\Include-ID:\keil5\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o "stm32_balance car\main.o" --omf_browse "stm32_balance car\main.crf" --depend "stm32_balance car\main.d")
+F (../Core/Src/main.c)(0x69E8AE00)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include-I.\RTE\_stm32_balance_car-ID:\keil5\ARM\CMSIS\6.1.0\CMSIS\Core\Include-ID:\keil5\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o "stm32_balance car\main.o" --omf_browse "stm32_balance car\main.crf" --depend "stm32_balance car\main.d")
 I (../Core/Inc/main.h)(0x69D6555F)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x69D7C123)
 I (../Core/Inc/stm32f1xx_hal_conf.h)(0x69BE3D50)
@@ -403,20 +407,21 @@ I (../Core/Inc/i2c.h)(0x69BA5993)
 I (../Core/Inc/tim.h)(0x69BCFBD7)
 I (../Core/Inc/usart.h)(0x69C14C8C)
 I (../Core/Inc/gpio.h)(0x69BA5992)
-I (../Core/Inc/OLED.h)(0x69DB8505)
+I (../Core/Inc/OLED.h)(0x69E88F8C)
 I (../Core/Inc/oled_font.h)(0x69DB141F)
 I (../Core/Inc/i2c_bus.h)(0x69DCFCA6)
+I (D:\keil5\ARM\ARMCC\include\stdarg.h)(0x588B8344)
+I (D:\keil5\ARM\ARMCC\include\stdio.h)(0x588B8344)
+I (D:\keil5\ARM\ARMCC\include\math.h)(0x588B8344)
+I (D:\keil5\ARM\ARMCC\include\string.h)(0x588B8344)
 I (../Core/Inc/MPU6050.h)(0x69E4DB68)
 I (../Core/Inc/MyI2C.h)(0x69BCE379)
 I (../Core/Inc/sr04.h)(0x69BC0404)
 I (../Core/Inc/task.h)(0x69C2764D)
-I (D:\keil5\ARM\ARMCC\include\math.h)(0x588B8344)
 I (../Core/Inc/inv_mpu.h)(0x69C39F39)
 I (../Core/Inc/inv_mpu_dmp_motion_driver.h)(0x69C382A4)
-I (D:\keil5\ARM\ARMCC\include\stdio.h)(0x588B8344)
 I (../Core/Inc/motor.h)(0x69BCF4DE)
 I (../Core/Inc/encoder.h)(0x69BD00A6)
-I (D:\keil5\ARM\ARMCC\include\string.h)(0x588B8344)
 I (../Core/Inc/pid.h)(0x69E4E272)
 I (D:\keil5\ARM\ARMCC\include\stdlib.h)(0x588B8344)
 F (../Core/Src/gpio.c)(0x69E4D540)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include-I.\RTE\_stm32_balance_car-ID:\keil5\ARM\CMSIS\6.1.0\CMSIS\Core\Include-ID:\keil5\Keil\STM32F1xx_DFP\2.4.1\Device\Include-D__UVISION_VERSION="538" -D_RTE_ -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o "stm32_balance car\gpio.o" --omf_browse "stm32_balance car\gpio.crf" --depend "stm32_balance car\gpio.d")

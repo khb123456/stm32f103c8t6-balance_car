@@ -62,7 +62,7 @@ void OLED_SetPos(uint8_t x,uint8_t y)
 }
 
 // 清屏：将显示 RAM 全部写为 0
-void OLED_Clear()
+void OLED_Clear(void)
 {
     uint8_t x,y;
     for(y=0;y<8;y++)
@@ -141,3 +141,13 @@ void OLED_ShowString(uint8_t x,uint8_t y,char *str,uint8_t size,uint8_t reverse)
         j++;
     }
 }
+void OLED_Printf(int16_t X, int16_t Y, uint8_t reverse,uint8_t FontSize, char *format, ...)
+{
+	char String[256];						//定义字符数组
+	va_list arg;							//定义可变参数列表数据类型的变量arg
+	va_start(arg, format);					//从format开始，接收参数列表到arg变量
+	vsprintf(String, format, arg);			//使用vsprintf打印格式化字符串和参数列表到字符数组中
+	va_end(arg);							//结束变量arg
+	OLED_ShowString(X, Y, String, FontSize,reverse);//OLED显示字符数组（字符串）
+}
+

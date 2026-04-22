@@ -54,16 +54,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-/* USER CODE BEGIN PV */
-uint8_t ID;								
+/* USER CODE BEGIN PV */							
 int16_t AX, AY, AZ, GX, GY, GZ,Tem;
-float AngleAcc;			//由加速度计得到的角度值
-float AngleGyro;		//由陀螺仪得到的角度值，执行互补滤波后，此值基本与Angle相等
-float Angle;			//互补滤波后的角度值，准确且无漂移
 
 uint32_t sys_ticks=0;
+
 int Encoder_Left,Encoder_Right;
-uint8_t display_buf[20];
 extern float distance;
 extern uint8_t rx_buf[2];
 char uart_buf[128];
@@ -77,12 +73,19 @@ float AveSpeed, DifSpeed;			//平均速度，差分速度
 uint8_t Run_Flag=1;
 volatile uint8_t control_flag = 0;    // 新增：由定时器置位，主循环执行 Control
 PID_TypeDef angle_pid={
-	.Kp=6.5f,
+	.Kp=3.0f,
 	.Ki=0.1f,
-	.Kd=0.05f,
+	.Kd=0.6f,
 	.out_max=90.0f
 };
 PID_TypeDef speed_pid={
+	.Kp=0.0f,
+	.Ki=0.0f,
+	.Kd=0.0f,
+	.out_max=15.0f
+};
+PID_TypeDef turn_pid=
+{
 	.Kp=0.0f,
 	.Ki=0.0f,
 	.Kd=0.0f,
@@ -95,9 +98,9 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void Read(void);
 int fputc(int c,FILE *stream);
-static void USART3_Proc(void);
-void Control();
-void Set_params();
+static void OLED_Proc(void);
+void Control(void);
+void Set_params(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -153,9 +156,6 @@ int main(void)
   Load(0,0);
   MPU6050_SetMode(MODE_COMPLEMENTARY);
   HAL_TIM_Base_Start_IT(&htim3);
-  /* 一次性初始化 PID，避免主循环反复初始化引起不稳定 */
-  PID_Init(&angle_pid);
-  PID_Init(&speed_pid);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -164,16 +164,26 @@ int main(void)
   {
     /* 仅做低频任务或参数更新，主控制交给定时中断置位，由主循环执行 Control */
     Set_params();          // 非阻塞地更新 PID/目标参数
-    if (control_flag) {
+	if(Run_Flag==0)
+	{
+	PID_Init(&angle_pid);
+	PID_Init(&speed_pid);
+	PID_Init(&turn_pid);
+    if (control_flag) 
+	{
         control_flag = 0;
-        Control();         // 在主循环调用，避免中断内做 I2C 阻塞
+        Control();         // 在主循环调用，避免中断内做I2C阻塞
     }
-    HAL_Delay(2);          // 少量延时，保持响应性
+	Run_Flag=1;
+	}
+	else
+	{
+	Run_Flag=0;
+	}	
   }
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
-  /* 主循环已处理所有逻辑，已删除多余代码片段以修复编译错误 */
   /* USER CODE END 3 */
 }
 
@@ -219,11 +229,12 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void Read(void)
 {
-	if(uwTick-sys_ticks<20)
-		return;
-	sys_ticks=uwTick;
+//	if(uwTick-sys_ticks<20)
+//		return;
+//	sys_ticks=uwTick;
 	Encoder_Left=Read_Speed(&htim2);
 	Encoder_Right=-Read_Speed(&htim4);
+	
 	LeftSpeed=Encoder_Left/13.0f/20.0f/0.002f;
 	RightSpeed=Encoder_Right/13.0f/20.0f/0.002f;
 	
@@ -238,22 +249,27 @@ int fputc(int c,FILE *stream)
 	return c;
 }
 
-static void USART3_Proc(void)
+static void OLED_Proc(void)
 {
-	PERIODIC(1);
-	uint32_t star_time,end_time,time;
-	star_time=HAL_GetTick();
-	MPU6050_Mode_Update();
-	yaw=MPU6050_GetYaw();
-	pitch=MPU6050_GetPitch();
-	roll=MPU6050_GetRoll();
-	GX=MPU6050_GetGyroY();
-	end_time=HAL_GetTick();
-	time=end_time-star_time;
-	printf("%f,%f,%f,%f\r\ntime:%d\n",yaw,pitch,roll,GX,time);
-	
+	PERIODIC(500);	
+	OLED_Printf(0,0,0,12,"Angle");
+	OLED_Printf(0,1,0,12,"P:%05.2f",angle_pid.Kp);
+	OLED_Printf(0,2,0,12,"I:%05.2f",angle_pid.Ki);
+	OLED_Printf(0,3,0,12,"D:%05.2f",angle_pid.Kd);
+	OLED_Printf(43,0,0,12,"Speed");
+	OLED_Printf(43,1,0,12,"P:%05.2f",speed_pid.Kp);
+	OLED_Printf(43,2,0,12,"I:%05.2f",speed_pid.Ki);
+	OLED_Printf(43,3,0,12,"D:%05.2f",speed_pid.Kd);
+	OLED_Printf(85,0,0,12,"Turn");
+	OLED_Printf(85,1,0,12,"P:%05.2f",turn_pid.Kp);
+	OLED_Printf(85,2,0,12,"I:%05.2f",turn_pid.Ki);
+	OLED_Printf(85,3,0,12,"D:%05.2f",turn_pid.Kd);
+	OLED_Printf(0,4,0,12,"Pitch:%05.2f",angle_pid.actual);
+	OLED_Printf(0,5,0,12,"Speed:%05.2f",AveSpeed);
+	SR04_Trigger();
+	OLED_Printf(0,6,0,12,"Distance:%05.2f",distance);
 }
-void Set_params()
+void Set_params(void)
 {
 	if(Rx_Flag==1)
 	{
@@ -281,11 +297,23 @@ void Set_params()
 			}
 			else if(strcmp(Name,"speed_ki")==0)
 			{
-				speed_pid.Ki=atof(Value);   // 修正：写入 Ki
+				speed_pid.Ki=atof(Value);
 			}
 			else if(strcmp(Name,"speed_kd")==0)
 			{
 				speed_pid.Kd=atof(Value);
+			}
+			else if(strcmp(Name,"turn_kp")==0)
+			{
+				turn_pid.Kp=atof(Value);
+			}
+			else if(strcmp(Name,"turn_ki")==0)
+			{
+				turn_pid.Ki=atof(Value); 
+			}
+			else if(strcmp(Name,"turn_kd")==0)
+			{
+				turn_pid.Kd=atof(Value);
 			}
 
 		}
@@ -298,7 +326,7 @@ void Set_params()
 				
 				/*执行摇杆操作*/
 				speed_pid.target = LV / 25.0;	//摇杆值LV缩放后，控制速度环目标值，前后行进控制
-				Dif_PWM = RH / 2;				//摇杆值RH缩放后，控制差分PWM，左右转弯控制
+				turn_pid.target = RH / 2;				//摇杆值RH缩放后，控制差分PWM，左右转弯控制
 			}
 		
 			Rx_Flag=0;
@@ -307,12 +335,13 @@ void Set_params()
 //	printf("[plot,%f,%f]",angle_pid.target,angle_pid.actual);
 	
 }
-void Control()
+void Control(void)
 {
     /* 假设此函数由定时器以固定周期（例如 10 ms）调用 */
     MPU6050_Mode_Update();
     /* 单角度环：目标先保持 0（可微调小偏置），屏蔽速度外环与摇杆 */
-    angle_pid.target =-0.2f;
+//    angle_pid.target =-0.2f;
+
     angle_pid.actual = MPU6050_GetPitch();
     
     /* 超限保护 */
@@ -373,14 +402,31 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-  static uint16_t Count0 = 0;
+  static uint16_t Count0 ,Count1,Count2;
   if (htim->Instance == TIM3) {
     Count0++;
-    if (Count0 >= 10) {
+	
+    if (Count0 >= 5) {
       
-      control_flag = 1;   // 置标志，主循环处理具体控制与 I2C
+      control_flag = 1;   // 置标志，主循环处理具体控制
       Count0 = 0;
     }
+	Count1++;
+	if(Count1>=30)
+	{
+		Count1=0;
+		Read();
+		if(Run_Flag)
+		{
+		speed_pid.actual=AveSpeed;
+		PID_Calculate(&speed_pid);
+		angle_pid.target=speed_pid.out-0.2f;
+			
+		turn_pid.actual=DifSpeed;
+		PID_Calculate(&turn_pid);
+		Dif_PWM=turn_pid.out;
+		}
+	}
   }
 }
 
