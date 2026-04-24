@@ -73,23 +73,24 @@ float AveSpeed, DifSpeed;			//平均速度，差分速度
 uint8_t Run_Flag=1;
 volatile uint8_t control_flag = 0;    // 新增：由定时器置位，主循环执行 Control
 PID_TypeDef angle_pid={
-	.Kp=5.0f,
+	.Kp=0.0f,
 	.Ki=0.0f,
-	.Kd=0.1f,
-	.out_max=900.0f
+	.Kd=0.0f,
+	.out_max=70.0f
 };
 PID_TypeDef speed_pid={
 	.Kp=0.0f,
 	.Ki=0.0f,
 	.Kd=0.0f,
-	.out_max=10.0f
+	.integral_max=50,
+	.out_max=8.0f
 };
 PID_TypeDef turn_pid=
 {
 	.Kp=0.0f,
 	.Ki=0.0f,
 	.Kd=0.0f,
-	.out_max=200.0f
+	.out_max=20.0f
 };
 /* USER CODE END PV */
 
@@ -156,22 +157,32 @@ int main(void)
   Load(0,0);
   MPU6050_SetMode(MODE_COMPLEMENTARY);
   HAL_TIM_Base_Start_IT(&htim3);
-  PID_Init(&angle_pid);
-  PID_Init(&speed_pid);
-  PID_Init(&turn_pid);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+//	  OLED_Proc();
+	  Set_params();
 	if (control_flag)
     {
       control_flag = 0;
       Control();
     }
-	  Set_params();          // 非阻塞地更新 PID/目标参数
-
+	if(Run_Flag==0)
+	{
+	PID_Init(&angle_pid);
+    PID_Init(&speed_pid);
+    PID_Init(&turn_pid);
+	Run_Flag=1;
+	}
+	else
+	{
+	Run_Flag=0;
+	}
+        
   }
     /* USER CODE END WHILE */
 
@@ -224,8 +235,8 @@ void Read(void)
 	Encoder_Left=Read_Speed(&htim2);
 	Encoder_Right=-Read_Speed(&htim4);
 	
-	LeftSpeed=Encoder_Left/13.0f/20.0f/0.05f;
-	RightSpeed=Encoder_Right/13.0f/20.0f/0.05f;
+	LeftSpeed=Encoder_Left/13.0f/4.0f/20.0f/0.05f;
+	RightSpeed=Encoder_Right/13.0f/4.0f/20.0f/0.05f;
 	
 	AveSpeed=(LeftSpeed+RightSpeed)/2.0f;
 	DifSpeed=LeftSpeed-RightSpeed;
@@ -338,9 +349,14 @@ void Control(void)
 		if(Run_Flag)
 		{
 		speed_pid.actual=AveSpeed;
+
 		PID_Calculate(&speed_pid);
-		angle_pid.target=speed_pid.out-0.2f;
-			
+		angle_pid.target=-speed_pid.out+0.3f;
+		
+		if(fabs(angle_pid.target)<0.5f)
+		{
+			angle_pid.target=0;
+		}
 		PID_Calculate(&angle_pid);
 		Ave_PWM = -((int)angle_pid.out);
 					
@@ -419,9 +435,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		 }
 	 
 	 }
-
-	
-  
 }
 /* USER CODE END 4 */
 

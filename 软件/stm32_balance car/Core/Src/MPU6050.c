@@ -362,3 +362,4 @@ float MPU6050_GetGyroZ(void)
 {
 	return gz;
 }
+
