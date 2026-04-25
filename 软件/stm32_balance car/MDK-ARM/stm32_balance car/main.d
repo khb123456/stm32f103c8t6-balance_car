@@ -29,13 +29,13 @@ stm32_balance car\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.
 stm32_balance car\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h
 stm32_balance car\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h
 stm32_balance car\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
+stm32_balance car\main.o: ../Core/Inc/dma.h
 stm32_balance car\main.o: ../Core/Inc/i2c.h
 stm32_balance car\main.o: ../Core/Inc/tim.h
 stm32_balance car\main.o: ../Core/Inc/usart.h
 stm32_balance car\main.o: ../Core/Inc/gpio.h
 stm32_balance car\main.o: ../Core/Inc/OLED.h
 stm32_balance car\main.o: ../Core/Inc/oled_font.h
-stm32_balance car\main.o: ../Core/Inc/i2c_bus.h
 stm32_balance car\main.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdarg.h
 stm32_balance car\main.o: D:\keil5\ARM\ARMCC\Bin\..\include\stdio.h
 stm32_balance car\main.o: D:\keil5\ARM\ARMCC\Bin\..\include\math.h

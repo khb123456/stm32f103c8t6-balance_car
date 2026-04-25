@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
 #include "i2c.h"
 #include "tim.h"
 #include "usart.h"
@@ -57,6 +58,8 @@
 /* USER CODE BEGIN PV */
 int16_t AX, AY, AZ, GX, GY, GZ,Tem;
 
+uint8_t TimerErrorFlag;	//定时器错误标志位，如果定时中断函数执行时间超过了定时时间，则此标志位置1
+uint16_t TimerCount;	//定时器计数值，此值可用于计算定时中断函数具体的执行时间
 
 
 int Encoder_Left,Encoder_Right;
@@ -72,6 +75,8 @@ float LeftSpeed, RightSpeed;		//左速度，右速度
 float AveSpeed, DifSpeed;			//平均速度，差分速度
 uint8_t Run_Flag=1;
 volatile uint8_t control_flag = 0;    // 新增：由定时器置位，主循环执行 Control
+
+float balance_offset=0;
 PID_TypeDef angle_pid={
 	.Kp=0.0f,
 	.Ki=0.0f,
@@ -92,6 +97,17 @@ PID_TypeDef turn_pid=
 	.Kd=0.0f,
 	.out_max=20.0f
 };
+// DMA异步OLED刷新状态机
+static uint8_t oled_refresh_state = 0;
+static uint32_t oled_refresh_timer = 0;
+
+// 全局变量
+volatile uint32_t last_cyccnt = 0;
+volatile uint32_t period_us = 0;
+
+volatile uint32_t oled_start_cycle = 0;
+volatile uint32_t oled_end_cycle = 0;
+volatile uint8_t oled_dma_done = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -106,7 +122,42 @@ void Control(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+// DWT初始化，开启CYCCNT计数器
+void DWT_Init(void)
+{
+    // 1. 开启DWT和ITM的时钟（必须）
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; 
+    // 2. 关闭CYCCNT计数器
+    DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;
+    // 3. 清零CYCCNT计数器
+    DWT->CYCCNT = 0;
+    // 4. 开启CYCCNT计数器
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+}
 
+// 读取当前CYCCNT计数器的值（单位：CPU时钟周期）
+static inline uint32_t DWT_GetCycle(void)
+{
+    return DWT->CYCCNT;
+}
+
+// 延时函数：微秒级延时（单位：us）
+void DWT_Delay_us(uint32_t us)
+{
+    uint32_t cycles = us * (SystemCoreClock / 1000000); // 换算成需要等待的周期数
+    uint32_t start = DWT_GetCycle();
+    while ((DWT_GetCycle() - start) < cycles);
+}
+
+// 测量一段代码的执行时间（返回单位：us）
+float DWT_MeasureTime_us(void (*func)(void))
+{
+    uint32_t start, end;
+    start = DWT_GetCycle();
+    func();  // 执行你要测的函数，比如OLED_DMA_Refresh()
+    end = DWT_GetCycle();
+    return (float)(end - start) / (SystemCoreClock / 1000000);
+}
 /* USER CODE END 0 */
 
 /**
@@ -117,7 +168,6 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -138,12 +188,13 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_I2C1_Init();
+  MX_DMA_Init();
   MX_TIM3_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
   MX_TIM4_Init();
   MX_USART3_UART_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   IIC_Init();
   OLED_Init();  
@@ -157,31 +208,33 @@ int main(void)
   Load(0,0);
   MPU6050_SetMode(MODE_COMPLEMENTARY);
   HAL_TIM_Base_Start_IT(&htim3);
-
+  DWT_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//	  OLED_Proc();
-	  Set_params();
-	if (control_flag)
-    {
-      control_flag = 0;
-      Control();
-    }
-	if(Run_Flag==0)
-	{
-	PID_Init(&angle_pid);
-    PID_Init(&speed_pid);
-    PID_Init(&turn_pid);
-	Run_Flag=1;
-	}
-	else
-	{
-	Run_Flag=0;
-	}
+
+    OLED_Proc();
+	Set_params();
+
+//	if (control_flag)
+//    {
+//      control_flag = 0;
+//      Control();
+//    }
+//	if(Run_Flag==0)
+//	{
+//	PID_Init(&angle_pid);
+//    PID_Init(&speed_pid);
+//    PID_Init(&turn_pid);
+//	Run_Flag=1;
+//	}
+//	else
+//	{
+//	Run_Flag=0;
+//	}
         
   }
     /* USER CODE END WHILE */
@@ -250,25 +303,59 @@ int fputc(int c,FILE *stream)
 	return c;
 }
 
+
+
 static void OLED_Proc(void)
 {
-	OLED_Clear();
-	OLED_Printf(0,0,0,12,"Angle");
-	OLED_Printf(0,1,0,12,"P:%05.2f",angle_pid.Kp);
-	OLED_Printf(0,2,0,12,"I:%05.2f",angle_pid.Ki);
-	OLED_Printf(0,3,0,12,"D:%05.2f",angle_pid.Kd);
-	OLED_Printf(43,0,0,12,"Speed");
-	OLED_Printf(43,1,0,12,"P:%05.2f",speed_pid.Kp);
-	OLED_Printf(43,2,0,12,"I:%05.2f",speed_pid.Ki);
-	OLED_Printf(43,3,0,12,"D:%05.2f",speed_pid.Kd);
-	OLED_Printf(85,0,0,12,"Turn");
-	OLED_Printf(85,1,0,12,"P:%05.2f",turn_pid.Kp);
-	OLED_Printf(85,2,0,12,"I:%05.2f",turn_pid.Ki);
-	OLED_Printf(85,3,0,12,"D:%05.2f",turn_pid.Kd);
-	OLED_Printf(0,4,0,12,"Pitch:%05.2f",angle_pid.actual);
-	OLED_Printf(0,5,0,12,"Speed:%05.2f",AveSpeed);
-	SR04_Trigger();
-	OLED_Printf(0,6,0,12,"Distance:%05.2f",distance);
+	static uint8_t first_run = 1;
+    
+    if(first_run)
+    {
+        OLED_Clear();
+        first_run = 0;
+    }
+    
+    // 只在需要更新时刷新屏幕
+    switch(oled_refresh_state)
+    {
+        case 0: // 开始异步刷新
+            OLED_Printf(0,0,0,12,"Angle");
+            OLED_Printf(0,1,0,12,"P:%05.2f",angle_pid.Kp);
+            OLED_Printf(0,2,0,12,"I:%05.2f",angle_pid.Ki);
+            OLED_Printf(0,3,0,12,"D:%05.2f",angle_pid.Kd);
+            OLED_Printf(43,0,0,12,"Speed");
+            OLED_Printf(43,1,0,12,"P:%05.2f",speed_pid.Kp);
+            OLED_Printf(43,2,0,12,"I:%05.2f",speed_pid.Ki);
+            OLED_Printf(43,3,0,12,"D:%05.2f",speed_pid.Kd);
+            OLED_Printf(85,0,0,12,"Turn");
+            OLED_Printf(85,1,0,12,"P:%05.2f",turn_pid.Kp);
+            OLED_Printf(85,2,0,12,"I:%05.2f",turn_pid.Ki);
+            OLED_Printf(85,3,0,12,"D:%05.2f",turn_pid.Kd);
+            OLED_Printf(0,4,0,12,"Pitch:%05.2f",angle_pid.actual);
+            OLED_Printf(0,5,0,12,"Speed:%05.2f",AveSpeed);
+            OLED_Printf(0,6,0,12,"Distance:%05.2f",distance);
+            OLED_Printf(0,7,0,12, "Flag:%1d", TimerErrorFlag);	//显示TimerErrorFlag
+            OLED_Printf(43,7,0,12, "C:%05d", TimerCount);		//显示TimerCount
+            
+            OLED_Update_Async();
+            oled_refresh_state = 1;
+            oled_refresh_timer = HAL_GetTick();
+            break;
+            
+        case 1: // 检查刷新状态
+            {
+                uint8_t status = OLED_Update_Async();
+                if(status == 2) // 刷新完成
+                {
+                    oled_refresh_state = 0;
+                }
+                else if(HAL_GetTick() - oled_refresh_timer > 100) // 超时保护
+                {
+                    oled_refresh_state = 0; // 重置状态机
+                }
+            }
+            break;
+    }
 }
 void Set_params(void)
 {
@@ -316,6 +403,10 @@ void Set_params(void)
 			{
 				turn_pid.Kd=atof(Value);
 			}
+			else if(strcmp(Name,"balance_offset")==0)
+			{
+				balance_offset=atof(Value);
+			}
 
 		}
 		else if (strcmp(Tag, "joystick") == 0)			//Tag为joystick，收到摇杆数据包
@@ -351,8 +442,7 @@ void Control(void)
 		speed_pid.actual=AveSpeed;
 
 		PID_Calculate(&speed_pid);
-		angle_pid.target=-speed_pid.out+0.3f;
-		
+		angle_pid.target=-speed_pid.out-balance_offset;	
 		if(fabs(angle_pid.target)<0.5f)
 		{
 			angle_pid.target=0;
@@ -421,6 +511,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	static uint16_t Count0,Count1;
 	if (htim->Instance == TIM3) 
 	 {
+		   // 【超时检测核心】
+        if(__HAL_TIM_GET_FLAG(&htim3, TIM_FLAG_UPDATE))
+        {
+            TimerErrorFlag = 1;
+            __HAL_TIM_CLEAR_FLAG(&htim3, TIM_FLAG_UPDATE);
+        }
+
+        // 查看中断执行耗时
+        TimerCount = __HAL_TIM_GET_COUNTER(&htim3);
+		 
 		Count0++;
 		 if(Count0>=10)
 		 {
@@ -428,7 +528,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			control_flag=1;
 		 }
 		 Count1++;
-		 if(Count1>=50)
+		 if(Count1>=1000)
 		 {
 			 Count1=0;
 			 Read();

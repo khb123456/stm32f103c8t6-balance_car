@@ -43,10 +43,9 @@ virtualFolder:
                 - path: ../Core/Inc/inv_mpu_dmp_motion_driver.h
                 - path: ../Core/Inc/pid.h
                 - path: ../Core/Src/pid.c
-                - path: ../Core/Inc/i2c_bus.h
-                - path: ../Core/Src/i2c_bus.c
                 - path: ../Core/Src/main.c
                 - path: ../Core/Src/gpio.c
+                - path: ../Core/Src/dma.c
                 - path: ../Core/Src/i2c.c
                 - path: ../Core/Src/tim.c
                 - path: ../Core/Src/usart.c

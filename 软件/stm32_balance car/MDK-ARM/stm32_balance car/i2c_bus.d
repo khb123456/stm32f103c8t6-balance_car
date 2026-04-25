@@ -29,5 +29,6 @@ stm32_balance car\i2c_bus.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_p
 stm32_balance car\i2c_bus.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h
 stm32_balance car\i2c_bus.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h
 stm32_balance car\i2c_bus.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
+stm32_balance car\i2c_bus.o: D:\keil5\ARM\ARMCC\Bin\..\include\string.h
 stm32_balance car\i2c_bus.o: ../Core/Inc/i2c.h
 stm32_balance car\i2c_bus.o: ../Core/Inc/main.h
