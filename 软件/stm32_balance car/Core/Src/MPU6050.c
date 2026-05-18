@@ -2,7 +2,7 @@
 
 
 KalmanFilter kf_pitch,kf_roll;
-float a=0.99; //互补滤波系数
+float a=0.99f; //互补滤波系数（匹配10ms控制周期，τ≈0.12s，fc≈1.4Hz）
 static AttitudeMode currentMode=MODE_KALMAN;
 void MPU6050_WriteReg(uint8_t RegAddress,uint8_t Data)
 {
@@ -84,13 +84,13 @@ void MPU6050_Proc_Complementary(void)
 	//互补滤波
 	MPU6050_UpDate();
 	//通过陀螺仪的测量结果计算欧拉角
-	float yaw_g=yaw+gz*0.005;
-	float pitch_g=pitch+gx*0.005;
-	float roll_g=roll-gy*0.005;
+	float yaw_g=yaw+gz*0.01f;
+	float pitch_g=pitch+gx*0.01f;
+	float roll_g=roll-gy*0.01f;
 	
 	//通过加速度计计算欧拉角
-	float pitch_a = atan2(ay,az) * 57.295779513f;
-	float roll_a  = atan2(ax, az) * 57.295779513f;
+	float pitch_a = atan2(ay, az) * 57.295779513f;
+	float roll_a  = atan2(ax,  az) * 57.295779513f;
 	
 	yaw=yaw_g;
 	pitch=a*pitch_g+(1-a)*pitch_a;
@@ -164,7 +164,7 @@ void MPU6050_Proc_Kalman(void)
 	
 	//陀螺仪积分角度（用于卡尔曼滤波更新）
 	static float yaw_g = 0;
-	yaw_g = yaw + gz * 0.005f;
+	yaw_g = yaw + gz * 0.01f;
 	
 	//初始化卡尔曼滤波器（首次运行时）
 	static uint8_t kalman_init=0;
@@ -176,10 +176,10 @@ void MPU6050_Proc_Kalman(void)
 	}
 	
 	//执行卡尔曼滤波（Pitch和Roll轴）
-	Kalman_Predict(&kf_pitch,gx,0.005f);  //预测Pitch
+	Kalman_Predict(&kf_pitch,gx,0.01f);  //预测Pitch
 	Kalman_Update(&kf_pitch,pitch_a);     //用加速度计更新Pitch
 	
-	Kalman_Predict(&kf_roll,-gy,0.005f);  //预测Roll
+	Kalman_Predict(&kf_roll,-gy,0.01f);  //预测Roll
 	Kalman_Update(&kf_roll,roll_a);     //用加速度计更新Roll
 	
 	//更新全局姿态角

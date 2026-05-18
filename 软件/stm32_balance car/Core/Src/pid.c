@@ -22,22 +22,25 @@ void PID_Calculate(PID_TypeDef *pid)
 {
 	pid->error = pid->target - pid->actual;
 	float Pout = pid->Kp * pid->error;
-	if(pid->Ki!=0)
+	if(pid->Ki != 0)
 	{
-	pid->integral += pid->error ;
+		if (fabs(pid->target - pid->actual) < 3.0f)
+		{
+			pid->integral += pid->error;
+		}
+		if (pid->integral > pid->integral_max) pid->integral = pid->integral_max;
+		if (pid->integral < -pid->integral_max) pid->integral = -pid->integral_max;
 	}
 	else
 	{
-		pid->integral=0;
+		pid->integral = 0;
 	}
-//	if (pid->integral > pid->integral_max) pid->integral = pid->integral_max;
-//	if (pid->integral < -pid->integral_max) pid->integral = -pid->integral_max;
 	float Iout = pid->Ki * pid->integral;
 
 	float Dout = pid->Kd * (pid->error - pid->error_last);
 	pid->error_last = pid->error;
 
 	pid->out = Pout + Iout + Dout;
-	if(pid->out>pid->out_max) pid->out=pid->out_max;
-	if(pid->out<-pid->out_max) pid->out=-pid->out_max;
+	if(pid->out > pid->out_max) pid->out = pid->out_max;
+	if(pid->out < -pid->out_max) pid->out = -pid->out_max;
 }

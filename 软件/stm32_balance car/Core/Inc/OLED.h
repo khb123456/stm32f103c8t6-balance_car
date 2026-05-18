@@ -1,29 +1,27 @@
 #ifndef __OLED_H
 #define __OLED_H
 
-#include "main.h"
+#include <stdint.h>
 
-#include "oled_font.h"
-#include <stdarg.h>
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
+#define OLED_WIDTH  128
+#define OLED_HEIGHT 64
 
+// 字体大小选项
+#define OLED_6X8    12
+#define OLED_8X16   16
 
-void OLED_WR_CMD(uint8_t cmd);
-void OLED_WR_DATA(uint8_t data);
+// 字模数组声明（在 OLED_Font.h 中定义）
+extern const unsigned char F6x8[][6];
+extern const unsigned char F8X16[];
+
 void OLED_Init(void);
-void OLED_SetPos(uint8_t x,uint8_t y);
+void OLED_Update(void);                     // 全屏刷新
+void OLED_UpdateArea(int16_t X, int16_t Y, uint8_t Width, uint8_t Height); // 局部刷新
 void OLED_Clear(void);
-void OLED_Update(void);
-void OLED_ShowChar(uint8_t x,uint8_t y,uint8_t ch,uint8_t size,uint8_t reverse);
-void OLED_ShowString(uint8_t x,uint8_t y,char *str,uint8_t size,uint8_t reverse);
-void OLED_Printf(int16_t X, int16_t Y, uint8_t reverse,uint8_t FontSize, char *format, ...);
-
-// DMA相关函数
-uint8_t OLED_Update_Async(void);
-uint8_t OLED_DMA_IsReady(void);
-void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c);
+void OLED_DrawPoint(int16_t X, int16_t Y);
+uint8_t OLED_GetPoint(int16_t X, int16_t Y);
+void OLED_ShowChar(int16_t X, int16_t Y, char ch, uint8_t FontSize);
+void OLED_ShowString(int16_t X, int16_t Y, char *str, uint8_t FontSize);
+void OLED_Printf(int16_t X, int16_t Y, uint8_t FontSize, char *format, ...);
 
 #endif
-
