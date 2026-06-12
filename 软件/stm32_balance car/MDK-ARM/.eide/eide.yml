@@ -41,8 +41,10 @@ virtualFolder:
                 - path: ../Core/Inc/dmpmap.h
                 - path: ../Core/Inc/inv_mpu.h
                 - path: ../Core/Inc/inv_mpu_dmp_motion_driver.h
-                - path: ../Core/Src/pid.c
                 - path: ../Core/Inc/pid.h
+                - path: ../Core/Src/pid.c
+                - path: ../Core/Inc/i2c_bus.h
+                - path: ../Core/Src/i2c_bus.c
                 - path: ../Core/Src/main.c
                 - path: ../Core/Src/gpio.c
                 - path: ../Core/Src/i2c.c
@@ -214,4 +216,14 @@ targets:
         otherCmds: ""
         proType: 1
         speed: 8000
-    uploader: JLink
+      STLink:
+        address: "0x8000000"
+        bin: ""
+        elFile: None
+        optionBytes: .eide/stm32_balance car.st.option.bytes.ini
+        otherCmds: ""
+        proType: SWD
+        resetMode: default
+        runAfterProgram: true
+        speed: 4000
+    uploader: STLink

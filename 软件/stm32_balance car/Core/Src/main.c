@@ -55,24 +55,44 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t ID;								
-float AX, AY, AZ, GX, GY, GZ,Tem;
+int16_t AX, AY, AZ, GX, GY, GZ,Tem;
+float AngleAcc;			//由加速度计得到的角度值
+float AngleGyro;		//由陀螺仪得到的角度值，执行互补滤波后，此值基本与Angle相等
+float Angle;			//互补滤波后的角度值，准确且无漂移
 
-uint32_t sys_ticks=0;
+
 int Encoder_Left,Encoder_Right;
-uint8_t display_buf[20];
 extern float distance;
-extern uint8_t rx_buf[2];
+uint8_t rx_buf[2];
 char uart_buf[128];
 uint8_t Rx_Flag;
 char RxPacket[100];
-int Ave_PWM;
-uint8_t Run_Flag=1;
+int16_t LeftPWM, RightPWM;			//左PWM，右PWM
+int16_t Ave_PWM, Dif_PWM;				//平均PWM，差分PWM
+
+float LeftSpeed, RightSpeed;		//左速度，右速度
+float AveSpeed, DifSpeed;			//平均速度，差分速度
+uint8_t Run_Flag;
+volatile uint8_t control_flag=0;
 PID_TypeDef angle_pid={
 	.Kp=0.0f,
 	.Ki=0.0f,
 	.Kd=0.0f,
-	.out_max=800.0f
+	.out_max=90.0f
+};
+PID_TypeDef speed_pid={
+	.Kp=0.0f,
+	.Ki=0.0f,
+	.Kd=0.0f,
+	.integral_max=20,
+	.out_max=8.0f
+};
+PID_TypeDef turn_pid=
+{
+	.Kp=0.0f,
+	.Ki=0.0f,
+	.Kd=0.0f,
+	.out_max=20.0f
 };
 /* USER CODE END PV */
 
@@ -81,26 +101,45 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void Read(void);
 int fputc(int c,FILE *stream);
-static void USART3_Proc(void);
-void Control();
-void Set_params();
+static void OLED_Proc(void);
+void Set_params(void);
+void Control(void);
+
+// DWT初始化，开启CYCCNT计数器
 void DWT_Init(void)
 {
-    DEM_CR |= DEM_CR_TRCENA;   
-    DWT_CYCCNT = 0;           
-    DWT_CR |= DWT_CR_CYCCNTENA;
+    // 1. 开启DWT和ITM的时钟（必须）
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; 
+    // 2. 关闭CYCCNT计数器
+    DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;
+    // 3. 清零CYCCNT计数器
+    DWT->CYCCNT = 0;
+    // 4. 开启CYCCNT计数器
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
 
-// 获取当前CPU周期
-uint32_t DWT_GetCycle(void)
+// 读取当前CYCCNT计数器的值（单位：CPU时钟周期）
+static inline uint32_t DWT_GetCycle(void)
 {
-    return DWT_CYCCNT;
+    return DWT->CYCCNT;
 }
 
-// 转微秒
-uint32_t DWT_Cycle2Us(uint32_t cycle)
+// 延时函数：微秒级延时（单位：us）
+void DWT_Delay_us(uint32_t us)
 {
-    return cycle / (SystemCoreClock / 1000000);
+    uint32_t cycles = us * (SystemCoreClock / 1000000); // 换算成需要等待的周期数
+    uint32_t start = DWT_GetCycle();
+    while ((DWT_GetCycle() - start) < cycles);
+}
+
+// 测量一段代码的执行时间（返回单位：us）
+float DWT_MeasureTime_us(void (*func)(void))
+{
+    uint32_t start, end;
+    start = DWT_GetCycle();
+    func();  // 执行你要测的函数，比如OLED_DMA_Refresh()
+    end = DWT_GetCycle();
+    return (float)(end - start) / (SystemCoreClock / 1000000);
 }
 /* USER CODE END PFP */
 
@@ -155,35 +194,29 @@ int main(void)
   HAL_TIM_Encoder_Start(&htim4,TIM_CHANNEL_ALL);
   HAL_UART_Receive_IT(&huart3,rx_buf,1);
   Load(0,0);
+  MPU6050_SetMode(MODE_COMPLEMENTARY);
+  HAL_TIM_Base_Start_IT(&htim3);
   DWT_Init();
-  MPU6050_SetMode(MODE_KALMAN);
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  PID_Init(&angle_pid);
+  PID_Init(&speed_pid);
+  PID_Init(&turn_pid);
+  Run_Flag=1;
   while (1)
   {
-//	SR04_Trigger();
-//	sprintf((char *)display_buf,"distance:%.1f cm ",distance);
-//	OLED_ShowString(0,0,(char *)display_buf,16,1);
-//	  Read();
-//	  printf("Encoder_L: %d \n  Encoder_R:%d \r\n",Encoder_Left,Encoder_Right);
-//	  sprintf((char *)display_buf,"Encoder_L:%d\r\n",Encoder_Left);
-//	  OLED_ShowString(0,0,(char*)display_buf,16,0);
-//	  sprintf((char *)display_buf,"Encoder_R:%d\r\n",Encoder_Right);
-//	  OLED_ShowString(0,2,(char*)display_buf,16,0);
-//	 HAL_UART_Transmit(&huart3,display_buf,sizeof(display_buf),1000);
+	  Set_params();  
+	  if(control_flag)
+	  {
+		  control_flag=0;
+		  Control();
+	  }
+  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-	Set_params();
-	Control();
-
-
-
-  }
   /* USER CODE END 3 */
 }
 
@@ -229,11 +262,17 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void Read(void)
 {
-	if(uwTick-sys_ticks<10)
-		return;
-	sys_ticks=uwTick;
+	static float AveSpeed_Filtered = 0;
 	Encoder_Left=Read_Speed(&htim2);
 	Encoder_Right=-Read_Speed(&htim4);
+	
+	LeftSpeed=Encoder_Left/13.0f/4.0f/20.0f/0.01f;
+	RightSpeed=Encoder_Right/13.0f/4.0f/20.0f/0.01f;
+	
+	AveSpeed_Filtered = AveSpeed_Filtered * 0.8f + ((LeftSpeed+RightSpeed)/2.0f) * 0.2f;
+	AveSpeed = AveSpeed_Filtered;
+	DifSpeed=LeftSpeed-RightSpeed;
+	
 }
 
 int fputc(int c,FILE *stream)
@@ -243,21 +282,7 @@ int fputc(int c,FILE *stream)
 	return c;
 }
 
-static void USART3_Proc(void)
-{
-	PERIODIC(1);
-	uint32_t star_time,end_time,time;
-	star_time=HAL_GetTick();
-	MPU6050_Mode_Update();
-	yaw=MPU6050_GetYaw();
-	pitch=MPU6050_GetPitch();
-	roll=MPU6050_GetRoll();
-	end_time=HAL_GetTick();
-	time=end_time-star_time;
-	printf("%f,%f,%f\r\ntime:%d\n",yaw,pitch,roll,time);
-	
-}
-void Set_params()
+void Set_params(void)
 {
 	if(Rx_Flag==1)
 	{
@@ -279,46 +304,95 @@ void Set_params()
 			{
 				angle_pid.Kd=atof(Value);
 			}
+			else if(strcmp(Name,"speed_kp")==0)
+			{
+				speed_pid.Kp=atof(Value);
+			}
+			else if(strcmp(Name,"speed_ki")==0)
+			{
+				speed_pid.Ki=atof(Value);
+			}
+			else if(strcmp(Name,"speed_kd")==0)
+			{
+				speed_pid.Kd=atof(Value);
+			}
+			else if(strcmp(Name,"turn_kp")==0)
+			{
+				turn_pid.Kp=atof(Value);
+			}
+			else if(strcmp(Name,"turn_ki")==0)
+			{
+				turn_pid.Ki=atof(Value); 
+			}
+			else if(strcmp(Name,"turn_kd")==0)
+			{
+				turn_pid.Kd=atof(Value);
+			}
 
 		}
+		else if (strcmp(Tag, "joystick") == 0)			//Tag为joystick，收到摇杆数据包
+			{
+				int8_t LH = atoi(strtok(NULL, ","));		//提取数据2，定义为摇杆值LH
+				int8_t LV = atoi(strtok(NULL, ","));		//提取数据3，定义为摇杆值LV
+				int8_t RH = atoi(strtok(NULL, ","));		//提取数据4，定义为摇杆值RH
+				int8_t RV = atoi(strtok(NULL, ","));		//提取数据5，定义为摇杆值RV
+				
+				/*执行摇杆操作*/
+				speed_pid.target = LV / 25.0;	//摇杆值LV缩放后，控制速度环目标值，前后行进控制
+				turn_pid.target = RH / 2;				//摇杆值RH缩放后，控制差分PWM，左右转弯控制
+			}
 		
 			Rx_Flag=0;
 
 	}
 //	printf("[plot,%f,%f]",angle_pid.target,angle_pid.actual);
-	
-}
-void Control()
-{
-	PERIODIC(10);
-	MPU6050_Mode_Update();
-	angle_pid.target=-3.0f;
-	angle_pid.actual=MPU6050_GetPitch();
-	angle_pid.dif=MPU6050_GetGyroX();
-//	sprintf((char *)display_buf,"Pitch:%f\r\n",angle_pid.actual);
-//	OLED_ShowString(0,2,(char*)display_buf,16,0);
-//	printf("angle:%f\n time:%d\n",angle_pid.actual,HAL_GetTick());
-	if(angle_pid.actual>30.0f||angle_pid.actual<-30.0f)
-	{
-		Run_Flag=0;
-	}
-	printf("Kp=%f,Kd=%f\nactual=%f,dif=%f\r\n",angle_pid.Kp,angle_pid.Kd,
-			angle_pid.actual,angle_pid.dif);
-	if(Run_Flag)
-	{
-	PID_Calculate(&angle_pid);
-	Ave_PWM=-((int)angle_pid.out);
-	Load(Ave_PWM,Ave_PWM);
-	}
-	else
-	{
-		Load(0,0);
-	}
-	printf("AvePWM:%d\n",Ave_PWM);
-	 
-	
 }
 
+void Control(void)
+{
+		MPU6050_Mode_Update();
+		angle_pid.actual = MPU6050_GetPitch();
+//		OLED_Clear();
+//	    OLED_Printf(0,0,12,"Pitch:%f",angle_pid.actual);
+//		OLED_Update();
+//	printf("Pitch:%f\r\n",angle_pid.actual);
+		 /* 超限保护 */
+		if (angle_pid.actual > 50.0f || angle_pid.actual < -50.0f) 
+		{
+			Load(0,0);
+			Run_Flag=0;
+		}
+		if(Run_Flag)
+		{
+		speed_pid.actual=AveSpeed;
+
+		PID_Calculate(&speed_pid);
+		angle_pid.target=-speed_pid.out-2.95f;
+		
+		PID_Calculate(&angle_pid);
+		Ave_PWM = -((int)angle_pid.out);
+					
+		turn_pid.actual=DifSpeed;
+		PID_Calculate(&turn_pid);
+		Dif_PWM=turn_pid.out;
+			
+		LeftPWM = Ave_PWM + Dif_PWM/2;
+		RightPWM = Ave_PWM - Dif_PWM/2;
+
+		/* 输出限幅 */
+		if (LeftPWM > 100) LeftPWM = 100;
+		if (LeftPWM < -100) LeftPWM = -100;
+		if (RightPWM > 100) RightPWM = 100;
+		if (RightPWM < -100) RightPWM = -100;
+
+		Load(LeftPWM, RightPWM);
+	    }
+		else
+		{
+		Load(0,0);
+		}
+	
+}
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	static uint8_t RxState=0;
@@ -353,6 +427,27 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		HAL_UART_Receive_IT(&huart3,rx_buf,1);
 	}
 }
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	static uint16_t Count0,Count1;
+	if (htim->Instance == TIM3) 
+	 {
+		Count0++;
+		 if(Count0>=10)
+		 {
+			Count0=0;
+			control_flag=1;	
+		 }
+		 Count1++;
+		 if(Count1>=10)
+		 {
+			Count1=0;
+			 Read();
+		 }
+	 
+	 }
+}
 /* USER CODE END 4 */
 
 /**
@@ -369,8 +464,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

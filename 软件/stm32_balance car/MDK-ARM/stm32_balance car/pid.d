@@ -37,3 +37,6 @@ stm32_balance car\pid.o: ../Core/Inc/task.h
 stm32_balance car\pid.o: ../Core/Inc/mpu6050.h
 stm32_balance car\pid.o: ../Core/Inc/MyI2C.h
 stm32_balance car\pid.o: ../Core/Inc/sr04.h
+stm32_balance car\pid.o: ../Core/Inc/task.h
+stm32_balance car\pid.o: ../Core/Inc/inv_mpu.h
+stm32_balance car\pid.o: ../Core/Inc/inv_mpu_dmp_motion_driver.h

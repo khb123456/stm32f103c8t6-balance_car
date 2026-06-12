@@ -2,7 +2,10 @@
 #define __MPU6050_H
 
 #include "MyI2C.h"
-
+#include "task.h"
+#include "math.h"
+#include "inv_mpu.h"
+#include "inv_mpu_dmp_motion_driver.h"
 /*
  * MPU6050寄存器地址定义
  * 适用场景：STM32/51/Arduino等单片机与MPU6050通信时使用
@@ -96,8 +99,8 @@ void MPU6050_Proc(void);
 uint8_t MPU6050_GetID(void);
 
 void MPU6050_UpDate(void);
-void MPU6050_GetData(float *AccX, float *AccY, float *AccZ,
-					float *GyroX, float *GyroY, float *GyroZ,float *Tem);
+void MPU6050_GetData(int16_t *AccX, int16_t *AccY, int16_t *AccZ,
+					int16_t *GyroX, int16_t *GyroY, int16_t *GyroZ);
 void MPU6050_Proc_Complementary(void);
 void Kalman_Init(KalmanFilter *kf);
 void Kalman_Predict(KalmanFilter *kf,float gyro_rate,float dt);
